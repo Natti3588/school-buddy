@@ -16,7 +16,8 @@ class TeacherManager(BaseUserManager):
     def create_superuser(self, user_id, password=None, **extra_fields):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
-        # createsuperuser は所属学校を主キーの値（例: 2）で渡してくるので school_id として渡す
+        # createsuperuser は所属学校を主キーの値（例: 2）で渡してくるので、
+        # school_id として渡す
         if "school" in extra_fields and not hasattr(extra_fields["school"], "pk"):
             extra_fields["school_id"] = extra_fields.pop("school")
         return self.create_user(user_id, password, **extra_fields)
