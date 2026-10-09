@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    {% include "_head.html" %}
+    <title>ログイン - {{ system_name }}</title>
+</head>
+<body>
+
+<div class="login-wrap">
+
+    <!-- 左：黒板（スマホでは上の短いヘッダー） -->
+    <div class="login-board blackboard">
+        <span class="doodle" style="top:12%; left:10%; font-size:2rem;">△○□</span>
+        <span class="doodle" style="bottom:16%; right:12%; font-size:1.6rem;">x² + 2x + 1</span>
+
+        <div class="title chalk-font">{{ system_name }}</div>
+        <div class="tagline chalk-font">{{ tagline }}</div>
+        <div class="sub chalk-font">今日も、生徒と向き合う時間を大切に。</div>
+
+        <!-- 黒板の溝（チョークと黒板消し） -->
+        <div class="chalk-tray">
+            <span class="chalk white"></span>
+            <span class="chalk yellow"></span>
+            <span class="chalk pink"></span>
+            <span class="chalk blue"></span>
+            <span class="eraser"></span>
+        </div>
+    </div>
+
+    <!-- 右：ログインフォーム -->
+    <div class="login-form-side">
+        <div class="login-form">
+
+            <h1 class="h2 fw-bold mb-2" style="color: var(--board);">教員ログイン</h1>
+            <p class="text-muted mb-4">教員IDとパスワードを入力してください。</p>
+
+            <!-- ID・パスワードが誤っているとき（フォーム全体のエラー） -->
+            {% for error in form.non_field_errors %}
+                <div class="alert alert-danger">{{ error }}</div>
+            {% endfor %}
+
+            <form method="post" novalidate>
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="{{ form.username.id_for_label }}" class="form-label fw-bold">教員ID</label>
+                    <input type="text" name="{{ form.username.html_name }}" id="{{ form.username.id_for_label }}"
+                           value="{{ form.username.value|default_if_none:'' }}"
+                           class="form-control{% if form.username.errors %} is-invalid{% endif %}"
+                           placeholder="例：T0001" autocomplete="username" autofocus>
+                    {% for error in form.username.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                <div class="mb-4">
+                    <label for="{{ form.password.id_for_label }}" class="form-label fw-bold">パスワード</label>
+                    <input type="password" name="{{ form.password.html_name }}" id="{{ form.password.id_for_label }}"
+                           class="form-control{% if form.password.errors %} is-invalid{% endif %}"
+                           autocomplete="current-password">
+                    {% for error in form.password.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-board btn-lg">ログイン</button>
+                </div>
+            </form>
+
+            <!-- TODO: パスワード再発行の画面を作ったら差し替える -->
+            <p class="text-center mt-3 mb-0">
+                <a href="#" class="link-board">パスワードを忘れた方</a>
+            </p>
+
+            <hr class="my-4">
+
+            <!-- 生徒用テストの入口（ログイン不要）。TODO: 画面を作ったら差し替える -->
+            <div class="d-grid">
+                <a href="#" class="btn btn-outline-chalk btn-lg">
+                    小テストを受ける（生徒用） ›
+                </a>
+            </div>
+
+            <p class="text-center text-muted small mt-4 mb-0">
+                ログインできない場合は、校内のシステム担当者へお問い合わせください。
+            </p>
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>
