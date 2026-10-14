@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}ホーム - {{ system_name }}{% endblock %}
+
+{% block content %}
+
+<div class="d-flex flex-wrap justify-content-between align-items-end mb-4 gap-2">
+    <div>
+        <h1 class="h3 fw-bold mb-1">おはようございます、{{ user.name }}先生</h1>
+        <p class="text-muted mb-0">今日の予定を確認しましょう。</p>
+    </div>
+    <div class="d-flex align-items-center gap-3">
+        <span class="text-muted">{% now "Y年n月j日（D）" %}</span>
+        <!-- TODO: 生徒登録の画面を作ったら差し替える -->
+        <a href="#" class="btn btn-board">＋ 生徒登録</a>
+    </div>
+</div>
+
+<!-- お知らせカード（数字はすべて仮データ。TODO: 各機能の画面を作ったらリンクを差し替える） -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-xl-3">
+        <div class="note-card summary-card bt-time p-3 h-100">
+            <div class="text-muted small">今日の授業</div>
+            <div class="number my-1">4<small class="fs-6 text-muted"> コマ</small></div>
+            <a href="#" class="btn btn-sm btn-outline-board mt-1">時間割を見る ›</a>
+        </div>
+    </div>
+    <div class="col-6 col-xl-3">
+        <div class="note-card summary-card bt-sub p-3 h-100">
+            <div class="text-muted small">補欠の担当</div>
+            <div class="number my-1">1<small class="fs-6 text-muted"> 件</small></div>
+            <a href="#" class="btn btn-sm btn-outline-board mt-1">確認する ›</a>
+        </div>
+    </div>
+    <div class="col-6 col-xl-3">
+        <div class="note-card summary-card bt-submit p-3 h-100">
+            <div class="text-muted small">未提出の提出物</div>
+            <div class="number my-1">3<small class="fs-6 text-muted"> 人</small></div>
+            <a href="#" class="btn btn-sm btn-outline-board mt-1">確認する ›</a>
+        </div>
+    </div>
+    <div class="col-6 col-xl-3">
+        <div class="note-card summary-card bt-quiz p-3 h-100">
+            <div class="text-muted small">小テスト（採点済み）</div>
+            <div class="number my-1">1<small class="fs-6 text-muted"> 件</small></div>
+            <a href="#" class="btn btn-sm btn-outline-board mt-1">結果を見る ›</a>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+
+    <!-- 今日の自分の授業（仮データ：config/views.py の TODAY_TIMETABLE） -->
+    <div class="col-lg-7">
+        <div class="note-card h-100">
+            <div class="d-flex justify-content-between align-items-center px-3 pt-3">
+                <h2 class="h5 fw-bold mb-0">今日の自分の授業</h2>
+                <a href="#" class="btn btn-sm btn-outline-board mt-1">週の時間割 ›</a>
+            </div>
+            <ul class="list-group list-group-flush mt-2">
+                {% for p, item in today %}
+                <li class="list-group-item d-flex align-items-center gap-3 {% if item and item.2 == 'sub' %}bg-warning-subtle{% endif %}">
+                    <span class="fw-bold" style="width: 3em;">{{ p }}限</span>
+                    {% if item %}
+                        <span>{{ item.0 }}　{{ item.1 }}</span>
+                        {% if item.2 == 'sub' %}
+                            <span class="badge badge-sub ms-auto">補欠（鈴木先生の代わり）</span>
+                        {% endif %}
+                    {% else %}
+                        <span class="text-muted">空き</span>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <!-- お知らせ（仮データ） -->
+    <div class="col-lg-5">
+        <div class="note-card p-3 h-100">
+            <h2 class="h5 fw-bold mb-3">お知らせ</h2>
+            <p class="mb-2"><span class="badge badge-sub">補欠</span> 5限 2年1組 理科を担当してください。</p>
+            <p class="mb-2"><span class="badge text-bg-light border">行事</span> 木曜5限は学年集会です。</p>
+            <p class="mb-0"><span class="badge text-bg-danger">時数</span> 1年3組 数学が予定より4時間不足しています。</p>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
