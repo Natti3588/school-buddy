@@ -270,6 +270,7 @@ body {
 .c-submit   { background: var(--chalk-pink); }
 .c-quiz     { background: var(--chalk-green); }
 .c-attend   { background: var(--chalk-orange); }
+.c-student  { background: #c9b6e4; }
 
 .content {
     padding: 28px;
@@ -446,4 +447,46 @@ body {
     color: #fff;
     font-weight: bold;
     box-shadow: 0 1px 3px rgba(0,0,0,.15);
+}
+
+/* ---------- 生徒登録 ---------- */
+.form-card {
+    max-width: 720px;
+}
+.req {
+    display: inline-block;
+    font-size: .72rem;
+    padding: 1px 6px;
+    margin-left: 6px;
+    border-radius: 4px;
+    background: #fbe3e7;
+    color: #b4233c;
+    vertical-align: middle;
+}
+.fixed-value {
+    background: #f3efe5;
+    border: 1px solid #e2dccd;
+    border-radius: .375rem;
+    padding: .6rem .9rem;
+    font-weight: bold;
+}
+.seg-tabs .disabled {
+    padding: 8px 20px;
+    color: #a9aea9;
+    cursor: not-allowed;
+    white-space: nowrap;
+}
+
+@media (max-width: 575.98px) {
+    .seg-tabs {
+        display: flex;
+        max-width: 100%;
+    }
+    .seg-tabs a,
+    .seg-tabs .disabled {
+        flex: 1 1 0;
+        text-align: center;
+        white-space: normal;
+        padding: 8px 10px;
+    }
 }
