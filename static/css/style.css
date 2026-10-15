@@ -271,6 +271,8 @@ body {
 .c-quiz     { background: var(--chalk-green); }
 .c-attend   { background: var(--chalk-orange); }
 .c-student  { background: #c9b6e4; }
+.c-class    { background: #8fd3c7; }
+.c-teacher  { background: #e8c39e; }
 
 .content {
     padding: 28px;
@@ -490,3 +492,59 @@ body {
         padding: 8px 10px;
     }
 }
+
+/* ---------- 入力 → 確認 → 完了 のステップ表示 ---------- */
+.steps {
+    display: flex;
+    gap: 8px;
+    max-width: 720px;
+    margin-bottom: 1.25rem;
+    padding: 0;
+    list-style: none;
+}
+.steps li {
+    flex: 1;
+    text-align: center;
+    padding: 6px 4px;
+    border-bottom: 4px solid #e2dccd;
+    color: #a9aea9;
+    font-size: .9rem;
+}
+.steps li.done {
+    border-bottom-color: #9fbfb3;
+    color: var(--muted);
+}
+.steps li.current {
+    border-bottom-color: var(--board);
+    color: var(--board);
+    font-weight: bold;
+}
+.confirm-table th {
+    width: 32%;
+    color: var(--muted);
+    font-weight: normal;
+    background: #faf7f0;
+}
+
+/* ---------- 管理者画面 ---------- */
+.admin-header {
+    background: #24302c;            /* 教員画面より濃い色で区別 */
+    border-bottom: 6px solid var(--wood);
+    color: var(--chalk-white);
+}
+.admin-badge {
+    background: var(--chalk-yellow);
+    color: #4d3f05;
+    font-size: .75rem;
+    font-weight: bold;
+    padding: 3px 8px;
+    border-radius: 6px;
+    vertical-align: middle;
+}
+.admin-sidebar .side-link.active {
+    border-left-color: #24302c;
+    background: #eceee9;
+}
+.bt-class   { border-top-color: #8fd3c7; }
+.bt-teacher { border-top-color: #e8c39e; }
+.bt-student { border-top-color: #c9b6e4; }

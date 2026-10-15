@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}登録完了 - {{ system_name }}{% endblock %}
+
+{% block content %}
+
+<h1 class="h3 fw-bold mb-3">生徒登録</h1>
+{% include "students/_steps.html" with step=3 %}
+
+<div class="note-card form-card p-4 p-md-5 text-center">
+    <div class="display-4 mb-2" style="color: var(--board);" aria-hidden="true">✓</div>
+    <h2 class="h4 fw-bold mb-3">登録しました</h2>
+
+    <table class="table table-sm text-start mx-auto mb-4" style="max-width: 360px;">
+        <tbody>
+            <tr><th class="text-muted fw-normal">学年・組</th><td>{{ s.classroom }}</td></tr>
+            <tr><th class="text-muted fw-normal">出席番号</th><td>{{ s.attendance_number }}</td></tr>
+            <tr><th class="text-muted fw-normal">生徒ID</th><td>{{ s.student_id }}</td></tr>
+            <tr><th class="text-muted fw-normal">氏名</th><td>{{ s.name }}（{{ s.furigana }}）</td></tr>
+            <tr><th class="text-muted fw-normal">生年月日</th><td>{{ s.birth_date|date:"Y年n月j日" }}</td></tr>
+        </tbody>
+    </table>
+
+    <div class="d-flex flex-wrap justify-content-center gap-2">
+        <a href="{% url 'top' %}" class="btn btn-outline-board px-4">ホームへ戻る</a>
+        <a href="{% url 'students:new' %}" class="btn btn-board px-4">続けて登録する</a>
+    </div>
+</div>
+
+{% endblock %}
