@@ -37,14 +37,14 @@
                 <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#sideMenu"></button>
             </div>
             <div class="pt-2">
-                {% with ep=request.resolver_match.url_name %}
+                {% with ep=request.resolver_match.view_name %}
                 <a href="{% url 'top' %}" class="side-link {% if ep == 'top' %}active{% endif %}">
                     <span class="dot c-home"></span>ホーム
                 </a>
-                <!-- TODO: 各機能の画面を作ったら href と active の条件を差し替える -->
-                <a href="#" class="side-link">
+                <a href="{% url 'students:new' %}" class="side-link {% if ep == 'students:new' or ep == 'students:confirm' or ep == 'students:registered' %}active{% endif %}">
                     <span class="dot c-student"></span>生徒登録
                 </a>
+                <!-- TODO: 各機能の画面を作ったら href と active の条件を差し替える -->
                 <a href="#" class="side-link">
                     <span class="dot c-time"></span>時間割・授業時数
                 </a>

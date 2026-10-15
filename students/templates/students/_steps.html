@@ -1,0 +1,8 @@
+{# 入力 → 確認 → 完了 の進み具合（step が無いときは 1）  使い方：{% include "students/_steps.html" with step=2 %} #}
+{% with cur=step|default:1 %}
+<ol class="steps">
+    <li class="{% if cur == 1 %}current{% elif cur > 1 %}done{% endif %}">1. 入力</li>
+    <li class="{% if cur == 2 %}current{% elif cur > 2 %}done{% endif %}">2. 確認</li>
+    <li class="{% if cur == 3 %}current{% endif %}">3. 完了</li>
+</ol>
+{% endwith %}
