@@ -69,6 +69,8 @@ class SystemAdminTopView(RoleRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["school_count"] = School.objects.count()
-        # 学校にはまだ登録日がないので、追加した順（id の大きい順）で新しいものを出す
-        context["recent_schools"] = School.objects.order_by("-pk")[:5]
+        # 今月1日の 0:00（日本時間）以降に登録された学校の数
+        month_start = timezone.localtime().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        context["new_school_count"] = School.objects.filter(registered_at__gte=month_start).count()
+        context["recent_schools"] = School.objects.order_by("-registered_at", "-pk")[:5]
         return context

@@ -23,8 +23,7 @@
     <div class="col-sm-6 col-xl-4">
         <div class="note-card summary-card bt-teacher p-3 h-100">
             <div class="text-muted small">今月の新規登録</div>
-            <!-- 仮データ（学校に登録日を持たせたら計算する） -->
-            <div class="number my-1">1<small class="fs-6 text-muted"> 校</small></div>
+            <div class="number my-1">{{ new_school_count }}<small class="fs-6 text-muted"> 校</small></div>
             <a href="#" class="btn btn-sm btn-outline-board mt-1">学校登録 ›</a>
         </div>
     </div>
@@ -41,13 +40,13 @@
                 <tr><th class="ps-3">学校コード</th><th>学校名</th><th>所在地</th><th class="pe-3">登録日</th></tr>
             </thead>
             <tbody>
-                <!-- 学校コード・所在地・登録日は School モデルにまだ無いので「—」（学校登録の画面を作るときに足す） -->
+                <!-- 所在地は、この項目を追加する前からある学校だと空なので「—」にする -->
                 {% for school in recent_schools %}
                 <tr>
-                    <td class="ps-3 text-muted">—</td>
+                    <td class="ps-3 text-muted">{{ school.code }}</td>
                     <td class="fw-bold">{{ school.name }}</td>
-                    <td>—</td>
-                    <td class="pe-3">—</td>
+                    <td>{{ school.address|default:"—" }}</td>
+                    <td class="pe-3">{{ school.registered_at|date:"Y/m/d" }}</td>
                 </tr>
                 {% empty %}
                 <tr><td colspan="4" class="ps-3 text-muted">まだ学校が登録されていません</td></tr>
