@@ -5,6 +5,8 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
 
+from accounts.models import Role
+
 # 生徒ID に使う文字（見間違えやすい 0/O・1/I は使わない）
 STUDENT_ID_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 STUDENT_ID_LENGTH = 8
@@ -32,6 +34,8 @@ class Classroom(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        # 担任に選べるのは教員だけ（学校管理者と管理者は生徒登録の画面を使わない）
+        limit_choices_to={"role": Role.TEACHER},
         related_name="homeroom_classes",
         verbose_name="担任",
     )

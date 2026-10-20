@@ -1,8 +1,10 @@
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views import View
 from django.views.generic import DetailView
+
+from accounts.mixins import RoleRequiredMixin
+from accounts.models import Role
 
 from .forms import StudentForm, homeroom_classes
 from .models import Student
@@ -11,9 +13,10 @@ from .models import Student
 SESSION_KEY = "student_new_data"
 
 
-class StudentNewView(LoginRequiredMixin, View):
+class StudentNewView(RoleRequiredMixin, View):
     """1. 入力"""
 
+    allowed_roles = [Role.TEACHER]
     template_name = "students/new.html"
 
     def get(self, request):
@@ -40,8 +43,10 @@ class StudentNewView(LoginRequiredMixin, View):
         return render(self.request, self.template_name, {"form": form, "classrooms": classrooms})
 
 
-class StudentConfirmView(LoginRequiredMixin, View):
+class StudentConfirmView(RoleRequiredMixin, View):
     """2. 確認"""
+
+    allowed_roles = [Role.TEACHER]
 
     def get(self, request):
         form = self.get_form()
@@ -70,9 +75,10 @@ class StudentConfirmView(LoginRequiredMixin, View):
         return StudentForm(data, teacher=self.request.user)
 
 
-class StudentRegisteredView(LoginRequiredMixin, DetailView):
+class StudentRegisteredView(RoleRequiredMixin, DetailView):
     """3. 完了"""
 
+    allowed_roles = [Role.TEACHER]
     template_name = "students/registered.html"
     context_object_name = "s"
     slug_field = "student_id"

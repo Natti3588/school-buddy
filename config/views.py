@@ -1,5 +1,7 @@
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView
+
+from accounts.mixins import RoleRequiredMixin
+from accounts.models import Role
 
 # 仮データ（時間割の機能を作ったら DB から取得する）
 PERIODS = [1, 2, 3, 4, 5, 6]
@@ -13,11 +15,29 @@ TODAY_TIMETABLE = {
 }
 
 
-class TopView(LoginRequiredMixin, TemplateView):
+class TopView(RoleRequiredMixin, TemplateView):
+    """教員のトップ画面"""
+
     template_name = "dashboard.html"
+    allowed_roles = [Role.TEACHER]
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         # 空きコマは None にして、テンプレート側で「空き」と表示する
         context["today"] = [(p, TODAY_TIMETABLE.get(p)) for p in PERIODS]
         return context
+
+
+# 学校管理者と管理者のトップ画面は仮（UI 担当の画面が届いたら差し替える）
+class SchoolAdminTopView(RoleRequiredMixin, TemplateView):
+    """学校管理者（校長）のトップ画面"""
+
+    template_name = "school_admin/top.html"
+    allowed_roles = [Role.SCHOOL_ADMIN]
+
+
+class SystemAdminTopView(RoleRequiredMixin, TemplateView):
+    """管理者のトップ画面"""
+
+    template_name = "system_admin/top.html"
+    allowed_roles = [Role.SYSTEM_ADMIN]
