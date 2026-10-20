@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    {% include "_head.html" %}
+    <title>{% block title %}管理者 - {{ system_name }}{% endblock %}</title>
+</head>
+<body>
+
+<!-- 管理者用ヘッダー（教員画面より濃い色＋「管理者」バッジで区別） -->
+<header class="admin-header">
+    <div class="container-fluid d-flex align-items-center justify-content-between py-2 px-3">
+
+        <div class="d-flex align-items-center gap-2">
+            <button class="btn btn-sm btn-outline-light d-md-none" type="button"
+                    data-bs-toggle="offcanvas" data-bs-target="#adminMenu" aria-label="メニュー">☰</button>
+            <a class="brand chalk-font text-decoration-none" style="color: var(--chalk-white); font-size: 1.6rem; letter-spacing: .08em;"
+               href="{% url 'system_admin_top' %}">{{ system_name }}</a>
+            <span class="admin-badge">システム管理者</span>
+        </div>
+
+        <div class="d-flex align-items-center gap-3">
+            <span class="d-none d-sm-inline">{{ user.name }}</span>
+            <!-- TODO: ログアウト画面を作ったら差し替える -->
+            <a href="#" class="btn btn-outline-light btn-sm">ログアウト</a>
+        </div>
+
+    </div>
+</header>
+
+<div class="container-fluid">
+    <div class="row">
+
+        <!-- 管理者用サイドバー -->
+        <nav class="col-md-3 col-lg-2 p-0 sidebar admin-sidebar offcanvas-md offcanvas-start" tabindex="-1" id="adminMenu">
+            <div class="offcanvas-header d-md-none">
+                <span class="fw-bold">管理メニュー</span>
+                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#adminMenu"></button>
+            </div>
+            <div class="pt-2">
+                {% with ep=request.resolver_match.view_name %}
+                <a href="{% url 'system_admin_top' %}" class="side-link {% if ep == 'system_admin_top' %}active{% endif %}">
+                    <span class="dot c-home"></span>管理者ホーム
+                </a>
+                <!-- TODO: 学校登録・学校一覧の画面を作ったら href と active の条件を差し替える -->
+                <a href="#" class="side-link">
+                    <span class="dot c-class"></span>学校登録
+                </a>
+                <a href="#" class="side-link">
+                    <span class="dot c-teacher"></span>学校一覧
+                </a>
+                {% endwith %}
+            </div>
+        </nav>
+
+        <main class="col-md-9 col-lg-10 content">
+            {% block content %}{% endblock %}
+        </main>
+
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

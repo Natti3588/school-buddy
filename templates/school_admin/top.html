@@ -1,15 +1,65 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    {% include "_head.html" %}
-    <title>校長トップ - {{ system_name }}</title>
-</head>
-<body>
+{% extends "base.html" %}
+{% block title %}ホーム - {{ system_name }}{% endblock %}
 
-<!-- 仮の画面（UI 担当の画面が届いたら差し替える） -->
-<main class="content">
-    <h1>これは校長のトップ画面です</h1>
-</main>
+{% block content %}
 
-</body>
-</html>
+<div class="d-flex flex-wrap justify-content-between align-items-end mb-4 gap-2">
+    <div>
+        <h1 class="h3 fw-bold mb-1">学校管理者ホーム</h1>
+        <p class="text-muted mb-0">教員のアカウントとクラスを管理します。</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <!-- TODO: 教員アカウント追加・クラス登録の画面を作ったらリンクを差し替える -->
+        <a href="#" class="btn btn-board">＋ 教員を追加</a>
+        <a href="#" class="btn btn-outline-board">＋ クラス登録</a>
+    </div>
+</div>
+
+<!-- 2つの機能 -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-4">
+        <div class="note-card summary-card bt-teacher p-3 h-100">
+            <div class="text-muted small">教員アカウント</div>
+            <div class="number my-1">{{ teacher_count }}<small class="fs-6 text-muted"> 人</small></div>
+            <a href="#" class="btn btn-sm btn-outline-board mt-1">教員アカウント管理 ›</a>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-4">
+        <div class="note-card summary-card bt-class p-3 h-100">
+            <div class="text-muted small">登録済みのクラス（{{ school_year }}年度）</div>
+            <div class="number my-1">{{ classrooms|length }}<small class="fs-6 text-muted"> クラス</small></div>
+            <a href="#" class="btn btn-sm btn-outline-board mt-1">クラス登録 ›</a>
+        </div>
+    </div>
+</div>
+
+<!-- クラスと担任の一覧 -->
+<div class="note-card">
+    <div class="d-flex justify-content-between align-items-center px-3 pt-3">
+        <h2 class="h5 fw-bold mb-0">クラスと担任（{{ school_year }}年度）</h2>
+        <a href="#" class="btn btn-sm btn-outline-board">クラス登録 ›</a>
+    </div>
+    <div class="table-responsive mt-2">
+        <table class="table align-middle mb-0">
+            <thead class="table-light">
+                <tr><th class="ps-3">クラス</th><th>担任</th><th class="text-end pe-3">生徒数</th></tr>
+            </thead>
+            <tbody>
+                {% for c in classrooms %}
+                <tr>
+                    <td class="ps-3 fw-bold">{{ c }}</td>
+                    <td>
+                        {% if c.homeroom_teacher %}{{ c.homeroom_teacher.name }} 先生
+                        {% else %}<span class="text-muted">未設定</span>{% endif %}
+                    </td>
+                    <td class="text-end pe-3">{{ c.student_count }}人</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="3" class="ps-3 text-muted">まだクラスが登録されていません</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

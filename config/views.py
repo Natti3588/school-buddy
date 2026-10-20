@@ -1,7 +1,10 @@
+from django.db.models import Count
+from django.utils import timezone
 from django.views.generic import TemplateView
 
 from accounts.mixins import RoleRequiredMixin
 from accounts.models import Role
+from schools.models import School
 
 # 仮データ（時間割の機能を作ったら DB から取得する）
 PERIODS = [1, 2, 3, 4, 5, 6]
@@ -28,12 +31,33 @@ class TopView(RoleRequiredMixin, TemplateView):
         return context
 
 
-# 学校管理者と管理者のトップ画面は仮（UI 担当の画面が届いたら差し替える）
+def current_school_year():
+    # 年度は4月始まり（1〜3月は前の年の年度）
+    today = timezone.localdate()
+    return today.year if today.month >= 4 else today.year - 1
+
+
 class SchoolAdminTopView(RoleRequiredMixin, TemplateView):
     """学校管理者（校長）のトップ画面"""
 
     template_name = "school_admin/top.html"
     allowed_roles = [Role.SCHOOL_ADMIN]
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        school = self.request.user.school
+        # 教員アカウントの数（校長などの学校管理者も含む）
+        context["teacher_count"] = school.teachers.count()
+        # クラスごとの生徒数は Count でまとめて数える（クラスごとに SQL を出さない）
+        # Count を使うと Meta の ordering が効かなくなるので、並び順をここで指定する
+        context["classrooms"] = (
+            school.classrooms.select_related("homeroom_teacher")
+            .annotate(student_count=Count("students"))
+            .order_by("grade", "number")
+        )
+        # クラスにはまだ年度の項目がないので、今の年度を表示するだけ
+        context["school_year"] = current_school_year()
+        return context
 
 
 class SystemAdminTopView(RoleRequiredMixin, TemplateView):
@@ -41,3 +65,10 @@ class SystemAdminTopView(RoleRequiredMixin, TemplateView):
 
     template_name = "system_admin/top.html"
     allowed_roles = [Role.SYSTEM_ADMIN]
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["school_count"] = School.objects.count()
+        # 学校にはまだ登録日がないので、追加した順（id の大きい順）で新しいものを出す
+        context["recent_schools"] = School.objects.order_by("-pk")[:5]
+        return context

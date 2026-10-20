@@ -548,3 +548,52 @@ body {
 .bt-class   { border-top-color: #8fd3c7; }
 .bt-teacher { border-top-color: #e8c39e; }
 .bt-student { border-top-color: #c9b6e4; }
+
+/* ---------- 小テスト（教員側） ---------- */
+.badge-open   { background: #d4ecdc; color: #1f6b3a; }
+.badge-closed { background: #e6e3dc; color: #5c605d; }
+.badge-draft  { background: #fff1c2; color: #6b5a12; }
+.question-card {
+    border: 1px solid #e2dccd;
+    border-left: 5px solid var(--chalk-green);
+    border-radius: 12px;
+    background: #fff;
+}
+.code-board {
+    border-width: 10px;
+    border-radius: 6px;
+    text-align: center;
+    padding: 22px 16px 46px;
+}
+.code-board .code {
+    font-size: clamp(2.6rem, 6vw, 4rem);
+    letter-spacing: .35em;
+    font-family: "Yomogi", "Noto Sans JP", monospace;
+    color: var(--chalk-white);
+}
+.mark-o { color: #d33a4a; font-weight: bold; }
+.mark-x { color: #3d6fb5; font-weight: bold; }
+.rate-bar { height: 12px; }
+
+/* チェック・ラジオの色を黒板グリーンに（Bootstrapの青を使わない） */
+.form-check-input:checked {
+    background-color: var(--board);
+    border-color: var(--board);
+}
+.form-check-input:focus,
+.form-control:focus,
+.form-select:focus {
+    border-color: #7fa89a;
+    box-shadow: 0 0 0 .2rem rgba(47,93,80,.18);
+}
+
+/* サイドバーの見出し（学校管理など） */
+.side-section {
+    margin: 14px 18px 4px;
+    padding-top: 10px;
+    border-top: 1px solid #e7e1d3;
+    font-size: .78rem;
+    font-weight: bold;
+    color: var(--muted);
+    letter-spacing: .08em;
+}

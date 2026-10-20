@@ -15,11 +15,12 @@
             <button class="btn btn-sm btn-outline-light d-md-none" type="button"
                     data-bs-toggle="offcanvas" data-bs-target="#sideMenu" aria-label="メニュー">☰</button>
 
-            <a class="brand chalk-font" href="{% url 'top' %}">{{ system_name }}</a>
+            <!-- ログインしている人の種類のトップ画面に移動する -->
+            <a class="brand chalk-font" href="{{ user.get_top_url }}">{{ system_name }}</a>
         </div>
 
         <div class="d-flex align-items-center gap-3">
-            <span class="d-none d-sm-inline">{{ user.name }} 先生（{{ user.school }}）</span>
+            <span class="d-none d-sm-inline">{{ user.name }} 先生（{{ user.school }}{% if user.role == "school_admin" %}・{{ user.get_role_display }}{% endif %}）</span>
             <!-- TODO: ログアウト画面を作ったら差し替える -->
             <a href="#" class="btn btn-outline-light btn-sm">ログアウト</a>
         </div>
@@ -38,6 +39,20 @@
             </div>
             <div class="pt-2">
                 {% with ep=request.resolver_match.view_name %}
+                {% if user.role == "school_admin" %}
+                <!-- 学校管理者：教員アカウント管理・クラス登録だけ -->
+                <a href="{% url 'school_admin_top' %}" class="side-link {% if ep == 'school_admin_top' %}active{% endif %}">
+                    <span class="dot c-home"></span>ホーム
+                </a>
+                <!-- TODO: 教員アカウント管理・クラス登録の画面を作ったら href と active の条件を差し替える -->
+                <a href="#" class="side-link">
+                    <span class="dot c-teacher"></span>教員アカウント管理
+                </a>
+                <a href="#" class="side-link">
+                    <span class="dot c-class"></span>クラス登録
+                </a>
+                {% else %}
+                <!-- 教員 -->
                 <a href="{% url 'top' %}" class="side-link {% if ep == 'top' %}active{% endif %}">
                     <span class="dot c-home"></span>ホーム
                 </a>
@@ -60,6 +75,7 @@
                 <a href="#" class="side-link">
                     <span class="dot c-attend"></span>出欠管理
                 </a>
+                {% endif %}
                 {% endwith %}
             </div>
         </nav>

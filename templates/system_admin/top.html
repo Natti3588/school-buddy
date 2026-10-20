@@ -1,15 +1,60 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    {% include "_head.html" %}
-    <title>管理者トップ - {{ system_name }}</title>
-</head>
-<body>
+{% extends "system_admin/base.html" %}
+{% block title %}管理者ホーム - {{ system_name }}{% endblock %}
 
-<!-- 仮の画面（UI 担当の画面が届いたら差し替える） -->
-<main class="content">
-    <h1>これは管理者のトップ画面です</h1>
-</main>
+{% block content %}
 
-</body>
-</html>
+<div class="d-flex flex-wrap justify-content-between align-items-end mb-4 gap-2">
+    <div>
+        <h1 class="h3 fw-bold mb-1">管理者ホーム</h1>
+        <p class="text-muted mb-0">放課GOを利用している学校を管理します。</p>
+    </div>
+    <!-- TODO: 学校登録・学校一覧の画面を作ったらリンクを差し替える -->
+    <a href="#" class="btn btn-board">＋ 学校登録</a>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-4">
+        <div class="note-card summary-card bt-class p-3 h-100">
+            <div class="text-muted small">利用中の学校</div>
+            <div class="number my-1">{{ school_count }}<small class="fs-6 text-muted"> 校</small></div>
+            <a href="#" class="btn btn-sm btn-outline-board mt-1">学校一覧 ›</a>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-4">
+        <div class="note-card summary-card bt-teacher p-3 h-100">
+            <div class="text-muted small">今月の新規登録</div>
+            <!-- 仮データ（学校に登録日を持たせたら計算する） -->
+            <div class="number my-1">1<small class="fs-6 text-muted"> 校</small></div>
+            <a href="#" class="btn btn-sm btn-outline-board mt-1">学校登録 ›</a>
+        </div>
+    </div>
+</div>
+
+<div class="note-card">
+    <div class="d-flex justify-content-between align-items-center px-3 pt-3">
+        <h2 class="h5 fw-bold mb-0">最近登録された学校</h2>
+        <a href="#" class="btn btn-sm btn-outline-board">すべて見る ›</a>
+    </div>
+    <div class="table-responsive mt-2">
+        <table class="table align-middle mb-0">
+            <thead class="table-light">
+                <tr><th class="ps-3">学校コード</th><th>学校名</th><th>所在地</th><th class="pe-3">登録日</th></tr>
+            </thead>
+            <tbody>
+                <!-- 学校コード・所在地・登録日は School モデルにまだ無いので「—」（学校登録の画面を作るときに足す） -->
+                {% for school in recent_schools %}
+                <tr>
+                    <td class="ps-3 text-muted">—</td>
+                    <td class="fw-bold">{{ school.name }}</td>
+                    <td>—</td>
+                    <td class="pe-3">—</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" class="ps-3 text-muted">まだ学校が登録されていません</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
