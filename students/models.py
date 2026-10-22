@@ -4,6 +4,8 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.db.models import Count
+from django.utils import timezone
 
 from accounts.models import Role
 
@@ -17,6 +19,12 @@ def generate_student_id():
     return "".join(secrets.choice(STUDENT_ID_CHARS) for _ in range(STUDENT_ID_LENGTH))
 
 
+def current_school_year():
+    # 年度は4月始まり（1〜3月は前の年の年度）
+    today = timezone.localdate()
+    return today.year if today.month >= 4 else today.year - 1
+
+
 class Classroom(models.Model):
     # 学校を削除すると、その学校のクラスも削除される
     # （ただし生徒がいるクラスは Student 側の PROTECT で止まる）
@@ -26,6 +34,8 @@ class Classroom(models.Model):
         related_name="classrooms",
         verbose_name="学校",
     )
+    # 同じ「3年1組」でも年度ごとに別のクラスとして登録する
+    year = models.PositiveSmallIntegerField("年度", default=current_school_year)
     grade = models.PositiveSmallIntegerField("学年", validators=[MinValueValidator(1)])
     number = models.PositiveSmallIntegerField("組", validators=[MinValueValidator(1)])
     # 担任が削除されても、クラスは残して担任を空にする
@@ -43,12 +53,12 @@ class Classroom(models.Model):
     class Meta:
         verbose_name = "クラス"
         verbose_name_plural = "クラス"
-        ordering = ["school", "grade", "number"]
+        ordering = ["school", "year", "grade", "number"]
         constraints = [
             models.UniqueConstraint(
-                fields=["school", "grade", "number"],
+                fields=["school", "year", "grade", "number"],
                 name="unique_classroom_per_school",
-                violation_error_message="同じ学校に同じ学年・組のクラスがすでにあります",
+                violation_error_message="同じ学校・年度に同じ学年・組のクラスがすでにあります",
             ),
         ]
 
@@ -63,6 +73,18 @@ class Classroom(models.Model):
             and self.homeroom_teacher.school_id != self.school_id
         ):
             raise ValidationError({"homeroom_teacher": "担任は同じ学校の教員を選んでください"})
+
+
+def classrooms_of_year(school, year):
+    """その学校・年度のクラスを、担任と生徒数つきで学年・組の順に返す"""
+    # 生徒数は Count でまとめて数える（クラスごとに SQL を出さない）
+    # Count を使うと Meta の ordering が効かなくなるので、並び順をここで指定する
+    return (
+        school.classrooms.filter(year=year)
+        .select_related("homeroom_teacher")
+        .annotate(student_count=Count("students"))
+        .order_by("grade", "number")
+    )
 
 
 class Student(models.Model):

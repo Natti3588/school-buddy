@@ -1,4 +1,4 @@
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views import View
 from django.views.generic import DetailView
@@ -6,8 +6,8 @@ from django.views.generic import DetailView
 from accounts.mixins import RoleRequiredMixin
 from accounts.models import Role
 
-from .forms import StudentForm, homeroom_classes
-from .models import Student
+from .forms import ClassroomForm, StudentForm, selectable_classes
+from .models import Student, classrooms_of_year, current_school_year
 
 # 入力画面 → 確認画面 の間、入力内容をセッションに入れておくときのキー
 SESSION_KEY = "student_new_data"
@@ -39,7 +39,7 @@ class StudentNewView(RoleRequiredMixin, View):
         return redirect("students:confirm")
 
     def render(self, form):
-        classrooms = list(homeroom_classes(self.request.user))
+        classrooms = list(selectable_classes(self.request.user))
         return render(self.request, self.template_name, {"form": form, "classrooms": classrooms})
 
 
@@ -85,5 +85,48 @@ class StudentRegisteredView(RoleRequiredMixin, DetailView):
     slug_url_kwarg = "student_id"
 
     def get_queryset(self):
-        # 自分が担任をしているクラスの生徒だけ表示できる（URL を書き換えても他の生徒は見えない）
-        return Student.objects.filter(classroom__in=homeroom_classes(self.request.user))
+        # 自分の学校の生徒だけ表示できる（URL を書き換えても他の学校の生徒は見えない）
+        return Student.objects.filter(classroom__school=self.request.user.school)
+
+
+class ClassroomNewView(RoleRequiredMixin, View):
+    """クラス登録（入力 → 確認 → 完了 をこの View でまとめて扱う）"""
+
+    allowed_roles = [Role.SCHOOL_ADMIN]
+
+    def get(self, request, pk=None):
+        if pk is not None:
+            # 3. 完了（登録後のリダイレクト先）。自分の学校のクラスだけ表示できる
+            classroom = get_object_or_404(request.user.school.classrooms, pk=pk)
+            return render(request, "classrooms/registered.html", {"c": classroom})
+        # 1. 入力
+        return self.render_new(ClassroomForm(school=request.user.school))
+
+    def post(self, request):
+        form = ClassroomForm(request.POST, school=request.user.school)
+        action = request.POST.get("action")
+        if action == "edit":
+            # 確認画面の「修正する」：入力済みの値を残したまま入力画面に戻る
+            return self.render_new(form)
+        if not form.is_valid():
+            return self.render_new(form)
+        if action == "register":
+            # 確認画面の「登録する」：確認画面を開いている間に同じクラスが登録されることもあるので、
+            # 保存の直前にもう一度チェックしてから保存する（上の is_valid）
+            classroom = form.save()
+            return redirect("classrooms:registered", pk=classroom.pk)
+        # 2. 確認（まだ保存しない。入力内容は確認画面の hidden に入れて送り直す）
+        return render(request, "classrooms/confirm.html", {"form": form, "c": form.cleaned_data})
+
+    def render_new(self, form):
+        school_year = current_school_year()
+        return render(
+            self.request,
+            "classrooms/new.html",
+            {
+                "form": form,
+                "school_year": school_year,
+                # 重複して登録しないように、今の年度の登録済みクラスを横に表示する
+                "classrooms": classrooms_of_year(self.request.user.school, school_year),
+            },
+        )

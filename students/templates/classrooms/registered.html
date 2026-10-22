@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}クラス登録完了 - {{ system_name }}{% endblock %}
+
+{% block content %}
+
+<h1 class="h3 fw-bold mb-3">クラス登録</h1>
+{% include "students/_steps.html" with step=3 %}
+
+<div class="note-card form-card p-4 p-md-5 text-center">
+    <div class="display-4 mb-2" style="color: var(--board);" aria-hidden="true">✓</div>
+    <h2 class="h4 fw-bold mb-3">{{ c.year }}年度 {{ c }}を登録しました</h2>
+    <p class="text-muted mb-4">担任：{{ c.homeroom_teacher.name }} 先生</p>
+
+    <div class="d-flex flex-wrap justify-content-center gap-2">
+        <a href="{% url 'school_admin_top' %}" class="btn btn-outline-board px-4">ホームへ戻る</a>
+        <a href="{% url 'classrooms:new' %}" class="btn btn-board px-4">続けて登録する</a>
+    </div>
+</div>
+
+{% endblock %}
