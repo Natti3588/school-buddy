@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}クラス登録 - {{ system_name }}{% endblock %}
+
+{% block content %}
+
+<h1 class="h3 fw-bold mb-1">クラス登録</h1>
+<p class="text-muted mb-3">新しいクラスを登録し、担任の先生を設定します。</p>
+
+{% include "students/_steps.html" %}
+
+<div class="row g-3">
+
+    <!-- 入力フォーム -->
+    <div class="col-xl-7">
+        <div class="note-card p-4">
+
+            {% if form.errors %}
+            <div class="alert alert-danger">
+                <div class="fw-bold mb-1">入力内容を確認してください</div>
+                <ul class="mb-0 small">
+                    {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+                    {% for field in form %}{% for error in field.errors %}<li>{{ error }}</li>{% endfor %}{% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <form method="post" action="{% url 'classrooms:new' %}" novalidate>
+                {% csrf_token %}
+
+                <div class="row g-3">
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold" for="{{ form.year.id_for_label }}">年度<span class="req">必須</span></label>
+                        <!-- 初期値は今の年度（4月に切り替わる）。来年度のクラスも先に登録できる -->
+                        <select name="{{ form.year.html_name }}" id="{{ form.year.id_for_label }}"
+                                class="form-select {% if form.year.errors %}is-invalid{% endif %}">
+                            {% for value, label in form.year.field.choices %}
+                            <option value="{{ value }}" {% if form.year.value|stringformat:"s" == value|stringformat:"s" %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                        {% for error in form.year.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold" for="{{ form.grade.id_for_label }}">学年<span class="req">必須</span></label>
+                        <select name="{{ form.grade.html_name }}" id="{{ form.grade.id_for_label }}"
+                                class="form-select {% if form.grade.errors %}is-invalid{% endif %}">
+                            {% for value, label in form.grade.field.choices %}
+                            <option value="{{ value }}" {% if form.grade.value|stringformat:"s" == value|stringformat:"s" %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                        {% for error in form.grade.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold" for="{{ form.number.id_for_label }}">クラス<span class="req">必須</span></label>
+                        <div class="input-group {% if form.number.errors %}has-validation{% endif %}">
+                            <input type="number" min="1" max="20" name="{{ form.number.html_name }}" id="{{ form.number.id_for_label }}"
+                                   class="form-control {% if form.number.errors %}is-invalid{% endif %}" placeholder="例：3"
+                                   value="{{ form.number.value|default_if_none:'' }}">
+                            <span class="input-group-text">組</span>
+                            {% for error in form.number.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="col-md-8">
+                        <label class="form-label fw-bold" for="{{ form.homeroom_teacher.id_for_label }}">担任の先生<span class="req">必須</span></label>
+                        <select name="{{ form.homeroom_teacher.html_name }}" id="{{ form.homeroom_teacher.id_for_label }}"
+                                class="form-select {% if form.homeroom_teacher.errors %}is-invalid{% endif %}">
+                            {% for value, label in form.homeroom_teacher.field.choices %}
+                            <option value="{{ value }}" {% if form.homeroom_teacher.value|stringformat:"s" == value|stringformat:"s" %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                        {% for error in form.homeroom_teacher.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+                    </div>
+
+                </div>
+
+                <hr class="my-4">
+
+                <div class="d-flex flex-wrap justify-content-end gap-2">
+                    <a href="{% url 'school_admin_top' %}" class="btn btn-outline-secondary px-4">キャンセル</a>
+                    <button type="submit" class="btn btn-board px-4">確認する ›</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 登録済みクラス（重複登録を防ぐため一覧を表示） -->
+    <div class="col-xl-5">
+        <div class="note-card h-100">
+            <h2 class="h6 fw-bold px-3 pt-3 mb-2">登録済みのクラス（{{ school_year }}年度）</h2>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead class="table-light">
+                        <tr><th class="ps-3">クラス</th><th>担任</th><th class="text-end pe-3">生徒数</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for c in classrooms %}
+                        <tr>
+                            <td class="ps-3">{{ c }}</td>
+                            <td>
+                                {% if c.homeroom_teacher %}{{ c.homeroom_teacher.name }} 先生
+                                {% else %}<span class="text-muted">未設定</span>{% endif %}
+                            </td>
+                            <td class="text-end pe-3">{{ c.student_count }}人</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="3" class="ps-3 text-muted">まだクラスが登録されていません</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

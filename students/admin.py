@@ -5,9 +5,9 @@ from .models import Classroom, Student
 
 @admin.register(Classroom)
 class ClassroomAdmin(admin.ModelAdmin):
-    list_display = ("__str__", "school", "homeroom_teacher")
-    list_filter = ("school", "grade")
-    ordering = ("school", "grade", "number")
+    list_display = ("__str__", "year", "school", "homeroom_teacher")
+    list_filter = ("school", "year", "grade")
+    ordering = ("school", "year", "grade", "number")
 
 
 @admin.register(Student)

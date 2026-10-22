@@ -44,11 +44,11 @@
                 <a href="{% url 'school_admin_top' %}" class="side-link {% if ep == 'school_admin_top' %}active{% endif %}">
                     <span class="dot c-home"></span>ホーム
                 </a>
-                <!-- TODO: 教員アカウント管理・クラス登録の画面を作ったら href と active の条件を差し替える -->
+                <!-- TODO: 教員アカウント管理の画面を作ったら href と active の条件を差し替える -->
                 <a href="#" class="side-link">
                     <span class="dot c-teacher"></span>教員アカウント管理
                 </a>
-                <a href="#" class="side-link">
+                <a href="{% url 'classrooms:new' %}" class="side-link {% if ep == 'classrooms:new' or ep == 'classrooms:registered' %}active{% endif %}">
                     <span class="dot c-class"></span>クラス登録
                 </a>
                 {% else %}

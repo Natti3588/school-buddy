@@ -1,6 +1,11 @@
 from django import forms
 
-from .models import Classroom, Student
+from accounts.models import Role
+
+from .models import Classroom, Student, current_school_year
+
+# クラス登録で選べる学年（中学校なので 1〜3年）
+GRADES = [1, 2, 3]
 
 
 class StudentForm(forms.ModelForm):
@@ -31,3 +36,47 @@ class StudentForm(forms.ModelForm):
 
 def homeroom_classes(teacher):
     return Classroom.objects.filter(homeroom_teacher=teacher, school=teacher.school)
+
+
+class TeacherChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, teacher):
+        return f"{teacher.name} 先生"
+
+
+class ClassroomForm(forms.ModelForm):
+    # 年度は前年度・今年度・来年度から選ぶ（来年度のクラスを先に登録できるように）
+    year = forms.TypedChoiceField(label="年度", coerce=int)
+    grade = forms.TypedChoiceField(
+        label="学年", coerce=int, choices=[("", "選択してください")] + [(g, f"{g}年") for g in GRADES]
+    )
+    number = forms.IntegerField(label="クラス", min_value=1, max_value=20)
+    homeroom_teacher = TeacherChoiceField(label="担任の先生", queryset=None, empty_label="選択してください")
+
+    class Meta:
+        model = Classroom
+        fields = ["year", "grade", "number", "homeroom_teacher"]
+
+    def __init__(self, *args, school, **kwargs):
+        super().__init__(*args, **kwargs)
+        # 学校は入力させず、ログイン中の学校管理者の学校にする
+        self.instance.school = school
+        school_year = current_school_year()
+        self.fields["year"].choices = [(y, f"{y}年度") for y in range(school_year - 1, school_year + 2)]
+        self.fields["year"].initial = school_year
+        # 担任に選べるのは同じ学校の教員だけ
+        self.fields["homeroom_teacher"].queryset = school.teachers.filter(role=Role.TEACHER).order_by("name")
+        # 空欄のときのメッセージを「〇〇を入力してください」にそろえる
+        for field in self.fields.values():
+            field.error_messages["required"] = f"{field.label}を入力してください"
+
+    def clean(self):
+        cleaned_data = super().clean()
+        year = cleaned_data.get("year")
+        grade = cleaned_data.get("grade")
+        number = cleaned_data.get("number")
+        # モデルの制約でも止まるが、クラスの欄にエラーを出すためにここで確認する
+        if year and grade and number and self.instance.school.classrooms.filter(
+            year=year, grade=grade, number=number
+        ).exists():
+            self.add_error("number", f"{grade}年{number}組はすでに存在しています")
+        return cleaned_data
