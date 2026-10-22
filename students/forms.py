@@ -1,4 +1,5 @@
 from django import forms
+from django.core.validators import MaxValueValidator
 
 from accounts.models import Role
 
@@ -6,6 +7,8 @@ from .models import Classroom, Student, current_school_year
 
 # クラス登録で選べる学年（中学校なので 1〜3年）
 GRADES = [1, 2, 3]
+# 出席番号の上限（UI の入力欄に合わせる）
+MAX_ATTENDANCE_NUMBER = 45
 
 
 class StudentForm(forms.ModelForm):
@@ -16,10 +19,13 @@ class StudentForm(forms.ModelForm):
 
     def __init__(self, *args, teacher, **kwargs):
         super().__init__(*args, **kwargs)
-        # 選べるクラスは、ログイン中の先生が担任をしているクラスだけ
+        # 選べるクラスは、クラス登録で登録した、自分の学校の今の年度のクラス
         # （画面に出していないクラスの id を送られても、ここで弾かれる）
-        self.fields["classroom"].queryset = homeroom_classes(teacher)
+        self.fields["classroom"].queryset = selectable_classes(teacher)
         self.fields["classroom"].empty_label = None
+        # 初期値は担任のクラス（担任でない先生は一番上のクラス）
+        self.fields["classroom"].initial = self.fields["classroom"].queryset.filter(homeroom_teacher=teacher).first()
+        self.fields["attendance_number"].validators.append(MaxValueValidator(MAX_ATTENDANCE_NUMBER))
         # 空欄のときのメッセージを「〇〇を入力してください」にそろえる
         for field in self.fields.values():
             field.error_messages["required"] = f"{field.label}を入力してください"
@@ -34,8 +40,8 @@ class StudentForm(forms.ModelForm):
         return cleaned_data
 
 
-def homeroom_classes(teacher):
-    return Classroom.objects.filter(homeroom_teacher=teacher, school=teacher.school)
+def selectable_classes(teacher):
+    return Classroom.objects.filter(school=teacher.school, year=current_school_year()).order_by("grade", "number")
 
 
 class TeacherChoiceField(forms.ModelChoiceField):

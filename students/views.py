@@ -6,7 +6,7 @@ from django.views.generic import DetailView
 from accounts.mixins import RoleRequiredMixin
 from accounts.models import Role
 
-from .forms import ClassroomForm, StudentForm, homeroom_classes
+from .forms import ClassroomForm, StudentForm, selectable_classes
 from .models import Student, classrooms_of_year, current_school_year
 
 # 入力画面 → 確認画面 の間、入力内容をセッションに入れておくときのキー
@@ -39,7 +39,7 @@ class StudentNewView(RoleRequiredMixin, View):
         return redirect("students:confirm")
 
     def render(self, form):
-        classrooms = list(homeroom_classes(self.request.user))
+        classrooms = list(selectable_classes(self.request.user))
         return render(self.request, self.template_name, {"form": form, "classrooms": classrooms})
 
 
@@ -85,8 +85,8 @@ class StudentRegisteredView(RoleRequiredMixin, DetailView):
     slug_url_kwarg = "student_id"
 
     def get_queryset(self):
-        # 自分が担任をしているクラスの生徒だけ表示できる（URL を書き換えても他の生徒は見えない）
-        return Student.objects.filter(classroom__in=homeroom_classes(self.request.user))
+        # 自分の学校の生徒だけ表示できる（URL を書き換えても他の学校の生徒は見えない）
+        return Student.objects.filter(classroom__school=self.request.user.school)
 
 
 class ClassroomNewView(RoleRequiredMixin, View):
