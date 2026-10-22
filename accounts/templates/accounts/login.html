@@ -31,8 +31,8 @@
     <div class="login-form-side">
         <div class="login-form">
 
-            <h1 class="h2 fw-bold mb-2" style="color: var(--board);">教員ログイン</h1>
-            <p class="text-muted mb-4">教員IDとパスワードを入力してください。</p>
+            <h1 class="h2 fw-bold mb-2" style="color: var(--board);">ログイン</h1>
+            <p class="text-muted mb-4">ログインIDとパスワードを入力してください。</p>
 
             <!-- ID・パスワードが誤っているとき（フォーム全体のエラー） -->
             {% for error in form.non_field_errors %}
@@ -42,7 +42,7 @@
             <form method="post" novalidate>
                 {% csrf_token %}
                 <div class="mb-3">
-                    <label for="{{ form.username.id_for_label }}" class="form-label fw-bold">教員ID</label>
+                    <label for="{{ form.username.id_for_label }}" class="form-label fw-bold">ログインID</label>
                     <input type="text" name="{{ form.username.html_name }}" id="{{ form.username.id_for_label }}"
                            value="{{ form.username.value|default_if_none:'' }}"
                            class="form-control{% if form.username.errors %} is-invalid{% endif %}"
@@ -79,7 +79,7 @@
                 </a>
             </div>
 
-            <p class="text-center text-muted small mt-4 mb-0">
+            <p class="text-center text-muted small mt-3 mb-0">
                 ログインできない場合は、校内のシステム担当者へお問い合わせください。
             </p>
         </div>
