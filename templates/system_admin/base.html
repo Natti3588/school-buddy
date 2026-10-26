@@ -20,8 +20,11 @@
 
         <div class="d-flex align-items-center gap-3">
             <span class="d-none d-sm-inline">{{ user.name }}</span>
-            <!-- TODO: ログアウト画面を作ったら差し替える -->
-            <a href="#" class="btn btn-outline-light btn-sm">ログアウト</a>
+            <!-- ログアウトは POST で送る（Django の LogoutView は GET を受け付けない） -->
+            <form method="post" action="{% url 'accounts:logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-light btn-sm">ログアウト</button>
+            </form>
         </div>
 
     </div>
