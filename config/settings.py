@@ -106,6 +106,8 @@ AUTH_USER_MODEL = "accounts.Teacher"
 
 # 未ログインで login_required のページを開いたときの移動先
 LOGIN_URL = "accounts:login"
+# ログアウトしたあとの移動先
+LOGOUT_REDIRECT_URL = "accounts:login"
 
 
 # Internationalization
