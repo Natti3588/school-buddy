@@ -1,0 +1,50 @@
+{# 印刷イメージ  sheet：question（問題用紙）/ answer（解答用紙）/ key（模範解答） #}
+<div class="paper">
+    <div class="paper-title">
+        {{ school_year }}年度　{{ quiz.get_subject_display }}　{{ quiz.title }}{% if sheet != "question" %}（{{ sheet_label }}）{% endif %}
+    </div>
+    {% if quiz.minutes %}<div class="paper-sub">制限時間：{{ quiz.minutes }}分</div>{% endif %}
+    <table class="paper-name">
+        <tr>
+            <td style="width: 30%; white-space: nowrap;">　　年　　組　　番</td>
+            <td style="width: 8%;">氏名</td>
+            <td></td>
+            <td style="width: 9%;" class="score-l">点数</td>
+            <td style="width: 16%;" class="text-end">／{{ quiz.total_points }}</td>
+        </tr>
+    </table>
+
+    {% for number, sec in sections %}
+    <div class="paper-sec">
+        <div class="paper-sec-title">
+            {{ number }}　{{ sec.instruction }}{% if sec.words %}（{{ sec.words }}）{% endif %}
+            <small>（{{ sec.total_points }}点）</small>
+        </div>
+
+        {% if sheet == "question" %}
+            {% if sec.qtype == "listening" %}<div class="paper-box small">※ 放送を聞いて答えます。英文は2回読まれます。</div>{% endif %}
+            {% if sec.qtype == "reading" and sec.passage %}<div class="paper-box">{{ sec.passage|linebreaksbr }}</div>{% endif %}
+            {% for q in sec.questions.all %}
+                {% if q.text %}<div class="paper-q">({{ forloop.counter }})　{{ q.text|linebreaksbr }}</div>{% endif %}
+                {% if sec.uses_choices %}
+                <div class="paper-choices">
+                    {% for symbol, c in q.symbol_choices %}<span>{{ symbol }}　{{ c.text }}</span>{% endfor %}
+                </div>
+                {% endif %}
+            {% endfor %}
+        {% else %}
+            <table class="paper-ans">
+                {% for q in sec.questions.all %}
+                <tr class="{% if sec.is_manual %}tall{% endif %}">
+                    <th>({{ forloop.counter }})</th>
+                    <td>{% if sheet == "key" %}<span class="key">{% if sec.uses_choices %}{{ q.correct_symbol }}{% else %}{{ q.answer }}{% endif %}</span>{% endif %}</td>
+                    <td class="pt">{{ q.points }}点</td>
+                </tr>
+                {% endfor %}
+            </table>
+        {% endif %}
+    </div>
+    {% endfor %}
+
+    {% if sheet == "question" %}<div class="paper-foot">答えはすべて解答用紙に書きなさい。</div>{% endif %}
+</div>

@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}テスト一覧 - {{ system_name }}{% endblock %}
+
+{% block content %}
+
+<div class="d-flex flex-wrap justify-content-between align-items-end mb-4 gap-2">
+    <div>
+        <h1 class="h3 fw-bold mb-1">テスト一覧</h1>
+        <p class="text-muted mb-0">テストの作成、印刷用PDFの出力、オンライン受付、採点結果の確認ができます。</p>
+    </div>
+    <a href="{% url 'quizzes:new' %}" class="btn btn-board">＋ テスト作成</a>
+</div>
+
+<div class="note-card">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th class="ps-3">タイトル</th><th>教科</th><th>実施日</th><th>出力方式</th><th>状態</th>
+                    <th>提出</th><th>平均正答率</th><th class="pe-3"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for q in quizzes %}
+                <tr>
+                    <td class="ps-3 fw-bold">{{ q.title }}</td>
+                    <td>{{ q.get_subject_display }}</td>
+                    <td class="text-nowrap">{{ q.date|date:"n/j（D）"|default:"—" }}</td>
+                    <td class="text-nowrap"><span class="badge badge-mode">{{ q.get_mode_display }}</span></td>
+                    <td>{% include "quizzes/_status.html" %}</td>
+                    <!-- TODO: 生徒の受験を作ったら、提出数と平均正答率を出す -->
+                    <td>—</td>
+                    <td>—</td>
+                    <td class="pe-3 text-end text-nowrap">
+                        {% if q.status == "ready" and q.mode == "print" %}
+                            <!-- 押すと用紙を選べる。選んだ用紙の PDF が新しいタブで開く
+                                 表は横スクロールの枠（table-responsive）の中にあるので、メニューが枠で切れないように
+                                 画面を基準に表示する（strategy: fixed） -->
+                            <div class="dropdown d-inline-block">
+                                <button type="button" class="btn btn-sm btn-outline-board dropdown-toggle" data-bs-toggle="dropdown"
+                                        data-bs-popper-config='{"strategy": "fixed"}' aria-expanded="false">PDF出力</button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    {% for s, label in sheets.items %}
+                                    <li><a class="dropdown-item" href="{% url 'quizzes:pdf' q.pk s %}" target="_blank" rel="noopener">{{ label }}</a></li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% elif q.status == "ready" %}
+                            <a href="{% url 'quizzes:created' q.pk %}" class="btn btn-sm btn-outline-board">完成画面 ›</a>
+                        {% elif q.status == "draft" %}
+                            <a href="{% url 'quizzes:questions' q.pk %}" class="btn btn-sm btn-outline-secondary">編集する ›</a>
+                        {% endif %}
+                        <!-- TODO: 受付状況・結果の画面を作ったら、受付中・終了のボタンを出す -->
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" class="ps-3 text-muted">まだテストがありません</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

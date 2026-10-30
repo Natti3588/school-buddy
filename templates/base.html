@@ -72,8 +72,8 @@
                 <a href="#" class="side-link">
                     <span class="dot c-submit"></span>提出物チェック
                 </a>
-                <a href="#" class="side-link">
-                    <span class="dot c-quiz"></span>小テスト
+                <a href="{% url 'quizzes:list' %}" class="side-link {% if request.resolver_match.app_name == 'quizzes' %}active{% endif %}">
+                    <span class="dot c-quiz"></span>テスト作成
                 </a>
                 <a href="#" class="side-link">
                     <span class="dot c-attend"></span>出欠管理
