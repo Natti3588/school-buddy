@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -19,13 +20,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
+# 本番（EC2）の値は /etc/study-buddy.env の環境変数から読む。環境変数が無いとき（開発用のパソコン）は下の値を使う
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-s8eh*r92+h!p=66owlw6zr_04*k+!_347y)z27)bgiuuan7%b1"
+SECRET_KEY = os.environ.get(
+    "DJANGO_SECRET_KEY", "django-insecure-s8eh*r92+h!p=66owlw6zr_04*k+!_347y)z27)bgiuuan7%b1"
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# 「False」「0」などを入れると DEBUG が切れる
+DEBUG = os.environ.get("DJANGO_DEBUG", "True").strip().lower() in ["true", "1", "yes", "on"]
 
-ALLOWED_HOSTS = []
+# カンマ区切り（例：52.205.70.192,example.com）
+ALLOWED_HOSTS = [host.strip() for host in os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",") if host.strip()]
 
 
 # Application definition
@@ -128,6 +134,8 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
+# collectstatic で CSS などをまとめてコピーする先（本番では nginx がここを配る）
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 
 # Email
