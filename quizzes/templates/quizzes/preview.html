@@ -15,7 +15,10 @@
         <a href="?sheet={{ s }}" class="{% if s == sheet %}active{% endif %}">{{ label }}</a>
         {% endfor %}
     </div>
-    <!-- TODO: PDF出力を作ったら「PDFで確認」ボタンを出す -->
+    {% if quiz.mode == "print" and quiz.status != "draft" %}
+    <!-- 作成中のテストは「この内容で作成する」を押すまで PDF にしない -->
+    <a href="{% url 'quizzes:pdf' quiz.pk sheet %}" target="_blank" rel="noopener" class="btn btn-outline-board">PDFで確認 ›</a>
+    {% endif %}
 </div>
 
 <div class="paper-wrap mb-4" style="max-width: 860px;">

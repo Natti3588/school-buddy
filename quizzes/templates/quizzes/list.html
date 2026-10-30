@@ -32,8 +32,21 @@
                     <td>—</td>
                     <td>—</td>
                     <td class="pe-3 text-end text-nowrap">
-                        {% if q.status == "ready" %}
-                            <a href="{% url 'quizzes:created' q.pk %}" class="btn btn-sm btn-outline-board">PDF出力 ›</a>
+                        {% if q.status == "ready" and q.mode == "print" %}
+                            <!-- 押すと用紙を選べる。選んだ用紙の PDF が新しいタブで開く
+                                 表は横スクロールの枠（table-responsive）の中にあるので、メニューが枠で切れないように
+                                 画面を基準に表示する（strategy: fixed） -->
+                            <div class="dropdown d-inline-block">
+                                <button type="button" class="btn btn-sm btn-outline-board dropdown-toggle" data-bs-toggle="dropdown"
+                                        data-bs-popper-config='{"strategy": "fixed"}' aria-expanded="false">PDF出力</button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    {% for s, label in sheets.items %}
+                                    <li><a class="dropdown-item" href="{% url 'quizzes:pdf' q.pk s %}" target="_blank" rel="noopener">{{ label }}</a></li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% elif q.status == "ready" %}
+                            <a href="{% url 'quizzes:created' q.pk %}" class="btn btn-sm btn-outline-board">完成画面 ›</a>
                         {% elif q.status == "draft" %}
                             <a href="{% url 'quizzes:questions' q.pk %}" class="btn btn-sm btn-outline-secondary">編集する ›</a>
                         {% endif %}

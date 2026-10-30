@@ -1,5 +1,7 @@
+import io
+
 from django.db import transaction
-from django.http import Http404
+from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views import View
@@ -25,12 +27,10 @@ from .models import (
     Subject,
     circled_number,
 )
+from .pdf import SHEETS, make_quiz_pdf
 
 # 数学の問題入力で、ボタンから入れられる記号
 MATH_SYMBOLS = ["²", "³", "√", "π", "×", "÷", "−", "≦", "≧", "°", "／"]
-
-# プレビューで切り替える用紙
-SHEETS = {"question": "問題用紙", "answer": "解答用紙", "key": "模範解答"}
 
 
 class QuizMixin(RoleRequiredMixin):
@@ -49,6 +49,7 @@ class QuizListView(QuizMixin, ListView):
 
     template_name = "quizzes/list.html"
     context_object_name = "quizzes"
+    extra_context = {"sheets": SHEETS}
 
     def get_queryset(self):
         return Quiz.objects.filter(author=self.request.user)
@@ -316,3 +317,19 @@ class QuizCreatedView(QuizMixin, View):
             return redirect("quizzes:questions", pk=quiz.pk)
         return render(request, "quizzes/created.html", {"quiz": quiz, "sheets": SHEETS})
 
+
+class QuizPdfView(QuizMixin, View):
+    """印刷用PDF（問題用紙・解答用紙・模範解答）"""
+
+    def get(self, request, pk, sheet):
+        # 受付を始めたあとのテストも印刷できるようにする
+        quiz = self.get_quiz(pk, editable=False)
+        if sheet not in SHEETS:
+            raise Http404("用紙の種類が正しくありません")
+        # 作成中のテストは問題がそろっていないことがあるので、問題入力に戻す
+        if quiz.status == Status.DRAFT:
+            return redirect("quizzes:questions", pk=quiz.pk)
+        pdf = make_quiz_pdf(quiz, sheet, school_year=current_school_year())
+        # as_attachment=False で、ダウンロードではなくブラウザの新しいタブで開く
+        filename = f"{quiz.get_subject_display()}_{quiz.title}_{SHEETS[sheet]}.pdf"
+        return FileResponse(io.BytesIO(pdf), as_attachment=False, filename=filename, content_type="application/pdf")

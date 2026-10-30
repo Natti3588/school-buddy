@@ -24,11 +24,10 @@
             <h3 class="h6 fw-bold mb-1">印刷用PDF</h3>
             <p class="small text-muted mb-3">A4サイズで出力されます。必要な用紙を選んでください。</p>
             <div class="d-grid gap-2">
-                <!-- TODO: PDF出力を作ったらリンクを差し替える。それまではプレビューで確認する -->
                 {% for s, label in sheets.items %}
-                <a href="{% url 'quizzes:preview' quiz.pk %}?sheet={{ s }}"
+                <a href="{% url 'quizzes:pdf' quiz.pk s %}" target="_blank" rel="noopener"
                    class="btn {% if forloop.first %}btn-board{% else %}btn-outline-board{% endif %}">
-                    {{ label }}をプレビューで確認
+                    {{ label }}をPDFで出力
                 </a>
                 {% endfor %}
             </div>

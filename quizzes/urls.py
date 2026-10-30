@@ -12,4 +12,5 @@ urlpatterns = [
     path("<int:pk>/questions/", views.QuizQuestionsView.as_view(), name="questions"),
     path("<int:pk>/preview/", views.QuizPreviewView.as_view(), name="preview"),
     path("<int:pk>/created/", views.QuizCreatedView.as_view(), name="created"),
+    path("<int:pk>/pdf/<str:sheet>/", views.QuizPdfView.as_view(), name="pdf"),
 ]
