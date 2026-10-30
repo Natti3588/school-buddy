@@ -1,0 +1,293 @@
+{% extends "base.html" %}
+{% block title %}問題入力 - {{ system_name }}{% endblock %}
+
+{% block content %}
+
+<h1 class="h3 fw-bold mb-1">テスト作成</h1>
+<p class="text-muted mb-3">大問ごとに問題を入力します。形式は「{{ quiz.get_subject_display }}」のフォーマットから選べます。</p>
+
+{% include "quizzes/_steps.html" with step=2 %}
+
+<!-- ボタンはすべてこのフォームから送る（name="action" の値で何をするか分ける） -->
+<form method="post" action="{% url 'quizzes:questions' quiz.pk %}" id="questionForm" novalidate>
+{% csrf_token %}
+
+<div class="row g-3">
+
+    <!-- 問題入力 -->
+    <div class="col-xl-8">
+
+        {% if saved %}<div class="alert alert-success py-2">下書きを保存しました</div>{% endif %}
+
+        <!-- 入力エラー（プレビューを押したとき、空の欄をすべて表示する）
+             ふだんは画面の JavaScript が出す。サーバーのチェックで見つかったときは最初から表示する -->
+        <div id="errorBox" class="alert alert-danger {% if not errors %}d-none{% endif %}" role="alert" tabindex="-1">
+            <div class="fw-bold mb-1">入力内容を確認してください（<span id="errorCount">{{ errors|length }}</span>件）</div>
+            <ul id="errorList" class="mb-0 small">{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul>
+        </div>
+
+        <!-- 教科のフォーマット説明 -->
+        <div class="format-note mb-3">
+            <span class="badge subject-badge me-2">{{ quiz.get_subject_display }}</span>{{ fmt.note }}
+        </div>
+
+        {% for block in blocks %}
+        {% with sec=block.section f=block.form sn=forloop.counter %}
+        <div class="question-card sec-card qt-{{ sec.qtype }} p-4 mb-3" id="sec-{{ sec.pk }}" data-sn="{{ sn }}">
+
+            <!-- 大問の見出し -->
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                <h2 class="h6 fw-bold mb-0">大問 {{ sn }}</h2>
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                    <!-- 形式を変えたら下書き保存して、形式に合った入力欄に切り替える -->
+                    <select name="{{ f.qtype.html_name }}" data-autosave class="form-select form-select-sm" style="width: auto;" aria-label="形式">
+                        {% for value, label in f.qtype.field.choices %}
+                        <option value="{{ value }}" {% if f.qtype.value == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if quiz.mode == "online" %}
+                        {% if sec.is_manual %}<span class="badge badge-draft">先生が採点</span>
+                        {% else %}<span class="badge badge-open">自動採点</span>{% endif %}
+                    {% endif %}
+                    <button type="submit" name="action" value="delete_section:{{ sec.pk }}" class="btn btn-sm btn-outline-danger"
+                            onclick="return confirm('大問 {{ sn }} を削除しますか？')">削除</button>
+                </div>
+            </div>
+
+            <label class="form-label small text-muted" for="{{ f.instruction.id_for_label }}">指示文<span class="req">必須</span></label>
+            <input type="text" maxlength="200" name="{{ f.instruction.html_name }}" id="{{ f.instruction.id_for_label }}"
+                   class="form-control mb-3" placeholder="{{ block.placeholder }}" value="{{ f.instruction.value|default_if_none:'' }}"
+                   data-req="大問{{ sn }}：指示文を入力してください">
+
+            {# ---- 形式ごとの追加項目 ---- #}
+            {% if sec.qtype == "listening" %}
+            <!-- 音声ファイルは今後追加する -->
+            <label class="form-label small text-muted" for="{{ f.script.id_for_label }}">放送文（スクリプト）<span class="req">必須</span> ※生徒には表示されません</label>
+            <textarea name="{{ f.script.html_name }}" id="{{ f.script.id_for_label }}" class="form-control form-control-sm mb-3" rows="3"
+                      data-req="大問{{ sn }}：放送文を入力してください">{{ f.script.value|default_if_none:'' }}</textarea>
+            {% else %}<input type="hidden" name="{{ f.script.html_name }}" value="{{ f.script.value|default_if_none:'' }}">{% endif %}
+
+            {% if sec.qtype == "reading" %}
+            <label class="form-label small text-muted" for="{{ f.passage.id_for_label }}">本文<span class="req">必須</span></label>
+            <textarea name="{{ f.passage.html_name }}" id="{{ f.passage.id_for_label }}" class="form-control mb-3" rows="4"
+                      data-req="大問{{ sn }}：本文を入力してください">{{ f.passage.value|default_if_none:'' }}</textarea>
+            {% else %}<input type="hidden" name="{{ f.passage.html_name }}" value="{{ f.passage.value|default_if_none:'' }}">{% endif %}
+
+            <!-- 図の挿入（数学の記述式）は、画像の保存を作ったら追加する -->
+
+            {% if sec.qtype == "written" and quiz.subject == "eng" %}
+            <div class="mb-3" style="max-width: 220px;">
+                <label class="form-label small text-muted" for="{{ f.words.id_for_label }}">語数の指定（任意）</label>
+                <input type="text" maxlength="50" name="{{ f.words.html_name }}" id="{{ f.words.id_for_label }}"
+                       class="form-control form-control-sm" placeholder="例：5語以上" value="{{ f.words.value|default_if_none:'' }}">
+            </div>
+            {% else %}<input type="hidden" name="{{ f.words.html_name }}" value="{{ f.words.value|default_if_none:'' }}">{% endif %}
+
+            {# ---- 小問 ---- #}
+            {% for item in block.items %}
+            {% with q=item.question qf=item.form qn=forloop.counter %}
+            <div class="sub-q">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="fw-bold">（{{ qn }}）</span>
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="input-group input-group-sm" style="width: 110px;">
+                            <input type="number" min="1" max="100" name="{{ qf.points.html_name }}"
+                                   class="form-control text-end pt-input {% if qf.points.errors %}is-invalid{% endif %}"
+                                   value="{{ qf.points.value|default_if_none:'' }}" aria-label="配点"
+                                   data-req="大問{{ sn }}（{{ qn }}）：配点を入力してください">
+                            <span class="input-group-text">点</span>
+                        </div>
+                        <button type="submit" name="action" value="delete_question:{{ q.pk }}" class="btn btn-sm btn-link text-danger p-0">削除</button>
+                    </div>
+                </div>
+                {% for error in qf.points.errors %}<div class="text-danger small mb-2">配点：{{ error }}</div>{% endfor %}
+
+                <label class="form-label small text-muted" for="{{ qf.text.id_for_label }}">
+                    {% if sec.qtype == "calc" %}式{% else %}問題文{% endif %}{% if block.text_optional %}（任意）{% else %}<span class="req">必須</span>{% endif %}
+                </label>
+                {% if quiz.subject == "math" and sec.qtype == "calc" or quiz.subject == "math" and sec.qtype == "written" %}
+                <!-- 数式入力：押すと、下の入力欄のカーソルの位置に記号が入る -->
+                <div class="math-bar mb-2" aria-label="数式入力">
+                    {% for s in math_symbols %}
+                    <button type="button" class="btn btn-sm btn-light border" data-insert="{{ s }}">{{ s }}</button>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                <textarea name="{{ qf.text.html_name }}" id="{{ qf.text.id_for_label }}" class="form-control mb-2"
+                          rows="{% if sec.qtype == 'calc' or sec.qtype == 'fill' %}1{% else %}2{% endif %}"
+                          {% if not block.text_optional %}data-req="大問{{ sn }}（{{ qn }}）：{% if sec.qtype == 'calc' %}式{% else %}問題文{% endif %}を入力してください"{% endif %}>{{ qf.text.value|default_if_none:'' }}</textarea>
+
+                {% if item.choices %}
+                <label class="form-label small text-muted">選択肢（正解にチェック）<span class="req">必須</span></label>
+                <div class="row g-2 mb-1 choice-group" id="cg-{{ q.pk }}">
+                    {% for symbol, choice, cf in item.choices %}
+                    <div class="col-md-6">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text">
+                                <input class="form-check-input mt-0" type="radio" name="q{{ q.pk }}-correct" value="{{ choice.pk }}"
+                                       {% if choice.is_correct %}checked{% endif %} aria-label="{{ symbol }}を正解にする">
+                            </span>
+                            <span class="input-group-text">{{ symbol }}</span>
+                            <input type="text" maxlength="200" name="{{ cf.text.html_name }}" class="form-control"
+                                   value="{{ cf.text.value|default_if_none:'' }}" aria-label="選択肢{{ symbol }}"
+                                   data-req="大問{{ sn }}（{{ qn }}）：選択肢「{{ symbol }}」を入力してください">
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <!-- 正解のチェック（選択肢のあとにエラーを出すため、ここに置く） -->
+                <span class="d-none" data-req-radio="大問{{ sn }}（{{ qn }}）：正解の選択肢にチェックしてください" data-group="cg-{{ q.pk }}"></span>
+                <input type="hidden" name="{{ qf.answer.html_name }}" value="">
+                {% else %}
+                <label class="form-label small text-muted" for="{{ qf.answer.id_for_label }}">
+                    {% if sec.is_manual %}模範解答（採点の目安）{% else %}正解{% endif %}<span class="req">必須</span>
+                </label>
+                <input type="text" maxlength="200" name="{{ qf.answer.html_name }}" id="{{ qf.answer.id_for_label }}"
+                       class="form-control" value="{{ qf.answer.value|default_if_none:'' }}"
+                       data-req="大問{{ sn }}（{{ qn }}）：{% if sec.is_manual %}模範解答{% else %}正解{% endif %}を入力してください">
+                {% endif %}
+            </div>
+            {% endwith %}
+            {% endfor %}
+
+            <button type="submit" name="action" value="add_question:{{ sec.pk }}" class="btn btn-sm btn-outline-board mt-2">＋ 小問を追加</button>
+        </div>
+        {% endwith %}
+        {% empty %}
+        <!-- 大問が1つもないとき。エラーではなく案内を表示する -->
+        <div id="emptyState" class="empty-state mb-3">
+            <div class="fw-bold mb-1">まだ大問がありません</div>
+            <div class="small text-muted">下の「＋ 大問を追加」から形式を選んで、問題を入力してください。</div>
+        </div>
+        {% endfor %}
+
+        <!-- 大問の追加（教科のフォーマットから選ぶ） -->
+        <div class="note-card p-3 mb-4 d-flex flex-wrap align-items-center gap-2">
+            <span class="fw-bold me-1">＋ 大問を追加：</span>
+            {% for t in fmt.types %}
+            <button type="submit" name="action" value="add_section:{{ t.value }}" class="btn btn-sm btn-outline-board">{{ t.label }}</button>
+            {% endfor %}
+        </div>
+
+        <div class="d-flex flex-wrap justify-content-between gap-2 mb-4">
+            <button type="submit" name="action" value="back" class="btn btn-outline-board px-4">‹ 基本情報に戻る</button>
+            <div class="d-flex flex-wrap gap-2">
+                <button type="submit" name="action" value="save" id="save-button" class="btn btn-outline-secondary px-4">下書き保存</button>
+                <button type="submit" name="action" value="preview" id="previewBtn" class="btn btn-board px-4">プレビュー ›</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 右：テストの概要（スクロールしても表示） -->
+    <div class="col-xl-4">
+        <div class="note-card p-3 summary-sticky">
+            <h2 class="h6 fw-bold mb-3">テストの概要</h2>
+            <table class="table table-sm mb-3 small">
+                <tr><th class="text-muted fw-normal">タイトル</th><td>{{ quiz.title }}</td></tr>
+                <tr><th class="text-muted fw-normal">教科</th><td>{{ quiz.get_subject_display }}</td></tr>
+                <tr><th class="text-muted fw-normal">出力方式</th><td>{{ quiz.get_mode_display }}</td></tr>
+                <tr><th class="text-muted fw-normal">大問・小問</th><td>{{ blocks|length }}問・{{ quiz.questions.count }}問</td></tr>
+            </table>
+            <div class="d-flex justify-content-between align-items-end">
+                <span class="text-muted small">合計点</span>
+                <!-- 配点を入力すると、JavaScript で合計点を計算し直す -->
+                <span class="total-pt"><span id="totalPt">{{ quiz.total_points }}</span><small> 点</small></span>
+            </div>
+            <div class="small text-muted mt-1">配点の合計がこのテストの満点になります（20点・50点などでもOK）。</div>
+            {% if quiz.mode == "online" and quiz.manual_section_count %}
+            <hr>
+            <div class="small text-muted">記述式・読解の問題（{{ quiz.manual_section_count }}つの大問）は、オンラインで提出されたあと先生が採点します。</div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+</form>
+
+<script>
+(function () {
+    const form = document.getElementById("questionForm");
+    const box = document.getElementById("errorBox");
+    const list = document.getElementById("errorList");
+
+    // 大問の形式を変えたら、下書き保存ボタンを押したことにする
+    form.querySelectorAll("[data-autosave]").forEach((select) => {
+        select.addEventListener("change", () => document.getElementById("save-button").click());
+    });
+
+    // 数式入力のボタン：同じ小問の入力欄のカーソル位置に記号を入れる
+    form.querySelectorAll("[data-insert]").forEach((button) => {
+        button.addEventListener("click", () => {
+            const textarea = button.closest(".math-bar").nextElementSibling;
+            textarea.setRangeText(button.dataset.insert, textarea.selectionStart, textarea.selectionEnd, "end");
+            textarea.focus();
+        });
+    });
+
+    // 合計点を自動で計算する
+    function updateTotal() {
+        let total = 0;
+        form.querySelectorAll(".pt-input").forEach((el) => (total += Number(el.value) || 0));
+        document.getElementById("totalPt").textContent = total;
+    }
+
+    // 入力チェック：空の必須項目を、ページの上から順にすべて集める（サーバーの check_questions と同じ文）
+    function check() {
+        const errors = [];
+        form.querySelectorAll(".is-invalid").forEach((el) => el.classList.remove("is-invalid"));
+        form.querySelectorAll(".choice-group").forEach((g) => g.classList.remove("group-invalid"));
+
+        form.querySelectorAll("[data-req], [data-req-radio]").forEach((el) => {
+            if (el.dataset.reqRadio !== undefined) {
+                const group = document.getElementById(el.dataset.group);
+                if (!group.querySelector("input[type=radio]:checked")) {
+                    errors.push(el.dataset.reqRadio);
+                    group.classList.add("group-invalid");
+                }
+            } else if (el.value.trim() === "") {
+                errors.push(el.dataset.req);
+                el.classList.add("is-invalid");
+            }
+        });
+
+        // 大問が1つもないとき／小問がない大問があるとき
+        const secs = form.querySelectorAll(".sec-card");
+        secs.forEach((sec) => {
+            if (!sec.querySelector(".sub-q")) errors.push("大問" + sec.dataset.sn + "：小問を1つ以上追加してください");
+        });
+        if (secs.length === 0) {
+            errors.push("大問を1つ以上追加してください（下の「＋ 大問を追加」から形式を選べます）");
+            document.getElementById("emptyState")?.classList.add("empty-invalid");
+        }
+        return errors;
+    }
+
+    // 「プレビュー」を押したとき、エラーがあれば送らずに上に表示する
+    document.getElementById("previewBtn").addEventListener("click", function (e) {
+        const errors = check();
+        if (errors.length === 0) return;
+        e.preventDefault();
+        list.innerHTML = "";
+        errors.forEach((msg) => {
+            const li = document.createElement("li");
+            li.textContent = msg;
+            list.appendChild(li);
+        });
+        document.getElementById("errorCount").textContent = errors.length;
+        box.classList.remove("d-none");
+        box.scrollIntoView({ behavior: "smooth", block: "start" });
+        box.focus({ preventScroll: true });
+    });
+
+    // 入力したら赤い枠を消す
+    form.addEventListener("input", function (e) {
+        if (e.target.classList.contains("pt-input")) updateTotal();
+        if (e.target.value && e.target.value.trim() !== "") e.target.classList.remove("is-invalid");
+    });
+    form.addEventListener("change", function (e) {
+        if (e.target.type === "radio") e.target.closest(".choice-group")?.classList.remove("group-invalid");
+    });
+})();
+</script>
+
+{% endblock %}

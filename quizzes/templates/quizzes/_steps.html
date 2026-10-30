@@ -1,0 +1,9 @@
+{# テスト作成の進み具合：基本情報 → 問題入力 → プレビュー → 完成  使い方：{% include "quizzes/_steps.html" with step=2 %} #}
+{% with cur=step|default:1 %}
+<ol class="steps">
+    <li class="{% if cur == 1 %}current{% elif cur > 1 %}done{% endif %}">1. 基本情報</li>
+    <li class="{% if cur == 2 %}current{% elif cur > 2 %}done{% endif %}">2. 問題入力</li>
+    <li class="{% if cur == 3 %}current{% elif cur > 3 %}done{% endif %}">3. プレビュー</li>
+    <li class="{% if cur == 4 %}current{% endif %}">4. 完成</li>
+</ol>
+{% endwith %}

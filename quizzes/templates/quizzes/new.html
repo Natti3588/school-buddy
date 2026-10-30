@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}テスト作成 - {{ system_name }}{% endblock %}
+
+{% block content %}
+
+<h1 class="h3 fw-bold mb-1">テスト作成</h1>
+<p class="text-muted mb-3">テストの基本情報を入力します。印刷用のPDFとオンライン配信のどちらにも使えます。</p>
+
+{% include "quizzes/_steps.html" %}
+
+<form method="post" action="{% if quiz %}{% url 'quizzes:edit' quiz.pk %}{% else %}{% url 'quizzes:new' %}{% endif %}" style="max-width: 900px;" novalidate>
+    {% csrf_token %}
+
+    {% if form.errors %}
+    <div class="alert alert-danger">
+        <div class="fw-bold mb-1">入力内容を確認してください</div>
+        <ul class="mb-0 small">
+            {% for field in form %}{% for error in field.errors %}<li>{{ error }}</li>{% endfor %}{% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <!-- 教科（選んだ教科で問題入力のフォーマットが変わる） -->
+    <div class="note-card p-4 mb-3 {% if form.subject.errors %}card-invalid{% endif %}">
+        <label class="form-label fw-bold d-block">教科<span class="req">必須</span></label>
+        <div class="subject-picker">
+            {% for value, label, ok in subjects %}
+                <input type="radio" class="btn-check" name="{{ form.subject.html_name }}" value="{{ value }}" id="sub-{{ value }}"
+                       {% if form.subject.value == value %}checked{% endif %} {% if not ok %}disabled{% endif %}>
+                <label class="subject-card" for="sub-{{ value }}">
+                    <span class="subject-name">{{ label }}</span>
+                    {% if not ok %}<span class="subject-soon">準備中</span>{% endif %}
+                </label>
+            {% endfor %}
+        </div>
+        {% for error in form.subject.errors %}<div class="text-danger small mt-2">{{ error }}</div>{% endfor %}
+        <div class="form-text">教科によって問題の形式が変わります（数学：計算・文章題／英語：リスニング・読解 など）。</div>
+    </div>
+
+    <!-- 基本情報 -->
+    <div class="note-card p-4 mb-3">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label fw-bold" for="{{ form.kind.id_for_label }}">テストの種類<span class="req">必須</span></label>
+                <!-- 最初は「選択してください」（何も選ばれていない状態）にする -->
+                <select name="{{ form.kind.html_name }}" id="{{ form.kind.id_for_label }}"
+                        class="form-select {% if form.kind.errors %}is-invalid{% endif %}">
+                    {% for value, label in form.kind.field.choices %}
+                    <option value="{{ value }}" {% if form.kind.value|default_if_none:'' == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+                {% for error in form.kind.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="col-md-8">
+                <label class="form-label fw-bold" for="{{ form.title.id_for_label }}">タイトル<span class="req">必須</span></label>
+                <input type="text" maxlength="100" name="{{ form.title.html_name }}" id="{{ form.title.id_for_label }}"
+                       class="form-control {% if form.title.errors %}is-invalid{% endif %}"
+                       placeholder="例：一次方程式 小テスト②" value="{{ form.title.value|default_if_none:'' }}">
+                {% for error in form.title.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-bold" for="{{ form.date.id_for_label }}">実施日</label>
+                <input type="date" name="{{ form.date.html_name }}" id="{{ form.date.id_for_label }}"
+                       class="form-control {% if form.date.errors %}is-invalid{% endif %}"
+                       value="{{ form.date.value|date:'Y-m-d'|default:form.date.value|default_if_none:'' }}">
+                {% for error in form.date.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-bold" for="{{ form.minutes.id_for_label }}">制限時間</label>
+                <div class="input-group {% if form.minutes.errors %}has-validation{% endif %}">
+                    <input type="number" min="5" max="120" name="{{ form.minutes.html_name }}" id="{{ form.minutes.id_for_label }}"
+                           class="form-control {% if form.minutes.errors %}is-invalid{% endif %}" placeholder="例：20"
+                           value="{{ form.minutes.value|default_if_none:'' }}">
+                    <span class="input-group-text">分</span>
+                    {% for error in form.minutes.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 出力方式（印刷かオンラインのどちらか） -->
+    <div class="note-card p-4 mb-4 {% if form.mode.errors %}card-invalid{% endif %}">
+        <label class="form-label fw-bold d-block">出力方式<span class="req">必須</span></label>
+        <div class="row g-2">
+            {% for value, text in modes %}
+            <div class="col-md-6">
+                <input type="radio" class="btn-check" name="{{ form.mode.html_name }}" value="{{ value }}" id="mode-{{ value }}"
+                       {% if form.mode.value == value %}checked{% endif %}>
+                <label class="mode-card h-100" for="mode-{{ value }}">
+                    <span class="fw-bold d-block mb-1">{{ value.label }}</span>
+                    <span class="small text-muted">{{ text }}</span>
+                </label>
+            </div>
+            {% endfor %}
+        </div>
+        {% for error in form.mode.errors %}<div class="text-danger small mt-2">{{ error }}</div>{% endfor %}
+        <div class="form-text">出力方式は、完成したあとでも変更できます。</div>
+    </div>
+
+    <div class="d-flex flex-wrap justify-content-end gap-2">
+        <a href="{% url 'quizzes:list' %}" class="btn btn-outline-secondary px-4">キャンセル</a>
+        <button type="submit" class="btn btn-board px-4">次へ（問題入力） ›</button>
+    </div>
+</form>
+
+{% endblock %}

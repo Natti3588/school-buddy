@@ -1,0 +1,5 @@
+{# 状態バッジ  使い方：{% include "quizzes/_status.html" with q=quiz %} #}
+{% if q.status == "open" %}<span class="badge badge-open">受付中</span>
+{% elif q.status == "closed" %}<span class="badge badge-closed">終了</span>
+{% elif q.status == "ready" %}<span class="badge badge-ready">作成済み</span>
+{% else %}<span class="badge badge-draft">作成中</span>{% endif %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}プレビュー - {{ system_name }}{% endblock %}
+
+{% block content %}
+
+<h1 class="h3 fw-bold mb-1">テスト作成</h1>
+<p class="text-muted mb-3">印刷したときのイメージを確認します。問題を直すときは「修正する」で戻れます。</p>
+
+{% include "quizzes/_steps.html" with step=3 %}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3" style="max-width: 860px;">
+    <!-- 問題用紙／解答用紙／模範解答 の切り替え -->
+    <div class="seg-tabs">
+        {% for s, label in sheets.items %}
+        <a href="?sheet={{ s }}" class="{% if s == sheet %}active{% endif %}">{{ label }}</a>
+        {% endfor %}
+    </div>
+    <!-- TODO: PDF出力を作ったら「PDFで確認」ボタンを出す -->
+</div>
+
+<div class="paper-wrap mb-4" style="max-width: 860px;">
+    {% include "quizzes/_paper.html" %}
+</div>
+
+{% if quiz.mode == "online" %}
+<div class="note-card p-3 mb-4 small" style="max-width: 860px;">
+    <span class="fw-bold">オンライン配信：</span>
+    生徒はタブレットで同じ問題に答えます（1問ずつ表示）。
+    {% if quiz.manual_section_count %}記述式・読解は提出後に先生が採点します。{% endif %}
+</div>
+{% endif %}
+
+<form method="post" action="{% url 'quizzes:preview' quiz.pk %}" class="d-flex flex-wrap justify-content-between gap-2" style="max-width: 860px;">
+    {% csrf_token %}
+    <a href="{% url 'quizzes:questions' quiz.pk %}" class="btn btn-outline-board px-4">‹ 修正する</a>
+    <button type="submit" class="btn btn-board px-4">この内容で作成する ›</button>
+</form>
+
+{% endblock %}
