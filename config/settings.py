@@ -109,7 +109,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-AUTH_USER_MODEL = "accounts.Teacher"
+AUTH_USER_MODEL = "accounts.User"
 
 # 未ログインで login_required のページを開いたときの移動先
 LOGIN_URL = "accounts:login"

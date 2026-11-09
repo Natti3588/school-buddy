@@ -18,16 +18,16 @@ TOP_URL_NAMES = {
 }
 
 
-class TeacherManager(BaseUserManager):
+class UserManager(BaseUserManager):
     use_in_migrations = True
 
     def create_user(self, user_id, password=None, **extra_fields):
         if not user_id:
             raise ValueError("ユーザーIDは必須です")
-        teacher = self.model(user_id=user_id, **extra_fields)
-        teacher.set_password(password)  # ハッシュ化して保存する
-        teacher.save(using=self._db)
-        return teacher
+        user = self.model(user_id=user_id, **extra_fields)
+        user.set_password(password)  # ハッシュ化して保存する
+        user.save(using=self._db)
+        return user
 
     def create_superuser(self, user_id, password=None, **extra_fields):
         extra_fields.setdefault("is_staff", True)
@@ -37,7 +37,8 @@ class TeacherManager(BaseUserManager):
         return self.create_user(user_id, password, **extra_fields)
 
 
-class Teacher(AbstractBaseUser, PermissionsMixin):
+class User(AbstractBaseUser, PermissionsMixin):
+    # ログインする人（教員・学校管理者・管理者）
     # password と last_login は AbstractBaseUser が持っている
     user_id = models.CharField("ユーザーID", max_length=150, unique=True)
     name = models.CharField("教員名", max_length=100)
@@ -57,7 +58,7 @@ class Teacher(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField("有効", default=True)
     is_staff = models.BooleanField("管理画面へのアクセス", default=False)
 
-    objects = TeacherManager()
+    objects = UserManager()
 
     USERNAME_FIELD = "user_id"
     # createsuperuser で USERNAME_FIELD とパスワード以外に入力を求める項目
@@ -65,8 +66,8 @@ class Teacher(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = ["name"]
 
     class Meta:
-        verbose_name = "教員"
-        verbose_name_plural = "教員"
+        verbose_name = "利用者"
+        verbose_name_plural = "利用者"
         constraints = [
             # 教員と学校管理者は所属学校が必須、管理者は所属学校なし
             models.CheckConstraint(

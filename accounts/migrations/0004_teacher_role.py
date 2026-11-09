@@ -14,17 +14,17 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.AddField(
-            model_name='teacher',
+            model_name='user',
             name='role',
             field=models.CharField(choices=[('teacher', '教員'), ('school_admin', '学校管理者'), ('system_admin', '管理者')], default='teacher', max_length=20, verbose_name='種類'),
         ),
         migrations.AlterField(
-            model_name='teacher',
+            model_name='user',
             name='school',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='teachers', to='schools.school', verbose_name='所属学校'),
         ),
         migrations.AddConstraint(
-            model_name='teacher',
+            model_name='user',
             constraint=models.CheckConstraint(condition=models.Q(models.Q(('role__in', ['teacher', 'school_admin']), ('school__isnull', False)), models.Q(('role', 'system_admin'), ('school__isnull', True)), _connector='OR'), name='school_matches_role', violation_error_message='教員と学校管理者は所属学校が必須です。管理者には所属学校を設定できません'),
         ),
     ]
