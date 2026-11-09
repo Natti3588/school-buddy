@@ -9,4 +9,5 @@ urlpatterns = [
     path("login/", views.LoginView.as_view(), name="login"),
     # ログアウト後の移動先は settings.LOGOUT_REDIRECT_URL（ログイン画面）
     path("logout/", LogoutView.as_view(), name="logout"),
+    path("password/", views.PasswordChangeView.as_view(), name="password_change"),
 ]

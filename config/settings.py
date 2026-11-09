@@ -56,6 +56,8 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    # 初回ログインの生徒は、パスワードを変更するまで他の画面に進めない（ログイン情報を使うので AuthenticationMiddleware より後）
+    "accounts.middleware.PasswordChangeRequiredMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
@@ -97,6 +99,8 @@ DATABASES = {
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+        # 標準では username・email などの欄を見るが、このシステムの User の欄は user_id と name
+        "OPTIONS": {"user_attributes": ("user_id", "name")},
     },
     {
         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",

@@ -5,6 +5,7 @@
 <!-- 仮の画面。TODO: 生徒の機能を作ったら中身を差し替える -->
 <div class="note-card p-4">
     <h1 class="h4 fw-bold mb-2">{{ user.student.name }} さん、ログインしました</h1>
-    <p class="text-muted mb-0">生徒ID：{{ user.student.student_id }}</p>
+    <p class="text-muted mb-3">生徒ID：{{ user.student.student_id }}</p>
+    <a href="{% url 'accounts:password_change' %}" class="btn btn-outline-board">パスワードを変更する</a>
 </div>
 {% endblock %}
