@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    {% include "_head.html" %}
+    <title>{% block title %}{{ system_name }}{% endblock %}</title>
+</head>
+<body>
+
+<!-- 生徒用のヘッダー（教員用の base.html はサイドバーや「〇〇 先生」の表示があるので使わない） -->
+<header class="app-header">
+    <div class="container d-flex align-items-center justify-content-between py-2 px-3">
+        <a class="brand chalk-font" href="{{ user.get_top_url }}">{{ system_name }}</a>
+
+        <div class="d-flex align-items-center gap-3">
+            <!-- 生徒の名前は User ではなく Student に持っている -->
+            <span class="d-none d-sm-inline">{{ user.student.name }} さん</span>
+            <!-- ログアウトは POST で送る（Django の LogoutView は GET を受け付けない） -->
+            <form method="post" action="{% url 'accounts:logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-light btn-sm">ログアウト</button>
+            </form>
+        </div>
+    </div>
+</header>
+
+<main class="container py-4" style="max-width: 720px;">
+    {% block content %}{% endblock %}
+</main>
+
+</body>
+</html>

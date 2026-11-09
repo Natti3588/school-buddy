@@ -62,3 +62,10 @@ class SystemAdminTopView(RoleRequiredMixin, TemplateView):
         context["new_school_count"] = School.objects.filter(registered_at__gte=month_start).count()
         context["recent_schools"] = School.objects.order_by("-registered_at", "-pk")[:5]
         return context
+
+
+class StudentTopView(RoleRequiredMixin, TemplateView):
+    """生徒のトップ画面（仮。生徒の機能を作ったら中身を差し替える）"""
+
+    template_name = "student/top.html"
+    allowed_roles = [Role.STUDENT]

@@ -3,11 +3,11 @@ import secrets
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Count
 from django.utils import timezone
 
-from accounts.models import Role
+from accounts.models import STUDENT_INITIAL_PASSWORD, Role, User
 
 # 生徒ID に使う文字（見間違えやすい 0/O・1/I は使わない）
 STUDENT_ID_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
@@ -17,6 +17,15 @@ STUDENT_ID_LENGTH = 8
 def generate_student_id():
     # secrets は推測されにくい乱数を作る（random は使わない）
     return "".join(secrets.choice(STUDENT_ID_CHARS) for _ in range(STUDENT_ID_LENGTH))
+
+
+def is_student_id_taken(student_id):
+    # 生徒ID はそのままログインID（User.user_id）になる。
+    # 教員のユーザーID は自由入力なので、生徒どうしだけでなく User 全体と重ならないか確かめる
+    return (
+        Student.objects.filter(student_id=student_id).exists()
+        or User.objects.filter(user_id=student_id).exists()
+    )
 
 
 def current_school_year():
@@ -92,6 +101,15 @@ class Student(models.Model):
     student_id = models.CharField(
         "生徒ID", max_length=STUDENT_ID_LENGTH, unique=True, editable=False
     )
+    # ログインに使う情報（ログインID＝生徒ID・パスワード）。生徒を保存するときに自動で作る
+    # ログイン情報だけを先に消して、生徒の記録が残らなくなることがないように PROTECT にする
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="student",
+        editable=False,
+        verbose_name="ログイン情報",
+    )
     # 生徒がいるクラスは削除できない
     classroom = models.ForeignKey(
         Classroom,
@@ -125,7 +143,17 @@ class Student(models.Model):
         if not self.student_id:
             # 32文字×8桁で約1兆通りあるが、万一の重複に備えて使われていないものを選ぶ
             student_id = generate_student_id()
-            while Student.objects.filter(student_id=student_id).exists():
+            while is_student_id_taken(student_id):
                 student_id = generate_student_id()
             self.student_id = student_id
-        super().save(*args, **kwargs)
+        # 生徒とログイン情報は、どちらか片方だけ保存されることがないように一緒に保存する
+        with transaction.atomic():
+            if self.user_id is None:
+                # 生徒登録画面と管理画面のどちらから追加しても、ログイン情報ができるようにここで作る
+                self.user = User.objects.create_user(
+                    user_id=self.student_id,
+                    password=STUDENT_INITIAL_PASSWORD,
+                    role=Role.STUDENT,
+                    must_change_password=True,
+                )
+            super().save(*args, **kwargs)
