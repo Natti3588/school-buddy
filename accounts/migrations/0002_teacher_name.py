@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.AddField(
-            model_name='teacher',
+            model_name='user',
             name='name',
             field=models.CharField(default='未設定', max_length=100, verbose_name='教員名'),
             preserve_default=False,

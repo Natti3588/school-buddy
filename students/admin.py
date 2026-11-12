@@ -15,5 +15,5 @@ class StudentAdmin(admin.ModelAdmin):
     list_display = ("student_id", "classroom", "attendance_number", "name", "furigana", "birth_date")
     list_filter = ("classroom__school", "classroom")
     search_fields = ("student_id", "name", "furigana")
-    # 生徒ID は自動で付けるので、表示だけする
-    readonly_fields = ("student_id",)
+    # 生徒ID とログイン情報は自動で作るので、表示だけする
+    readonly_fields = ("student_id", "user")

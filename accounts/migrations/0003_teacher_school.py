@@ -6,7 +6,7 @@ PLACEHOLDER_SCHOOL_NAME = "未設定"
 
 def assign_placeholder_school(apps, schema_editor):
     # 既存の教員は所属学校が決まっていないので、仮の学校に所属させる
-    Teacher = apps.get_model("accounts", "Teacher")
+    Teacher = apps.get_model("accounts", "User")
     School = apps.get_model("schools", "School")
     teachers = Teacher.objects.filter(school__isnull=True)
     if teachers.exists():
@@ -24,7 +24,7 @@ class Migration(migrations.Migration):
     operations = [
         # 1. いったん NULL を許可して列を追加
         migrations.AddField(
-            model_name="teacher",
+            model_name="user",
             name="school",
             field=models.ForeignKey(
                 null=True,
@@ -38,7 +38,7 @@ class Migration(migrations.Migration):
         migrations.RunPython(assign_placeholder_school, migrations.RunPython.noop),
         # 3. 必須（NOT NULL）にする
         migrations.AlterField(
-            model_name="teacher",
+            model_name="user",
             name="school",
             field=models.ForeignKey(
                 on_delete=django.db.models.deletion.CASCADE,

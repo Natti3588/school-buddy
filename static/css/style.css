@@ -783,3 +783,23 @@ body {
     padding: 28px 16px; text-align: center;
 }
 .empty-state.empty-invalid { border-color: #dc3545; background: #fff6f6; }
+
+/* ---------- 生徒ログイン・ホーム ---------- */
+.pw-rules { list-style: none; padding: 0; margin: 0; font-size: .92rem; color: var(--muted); }
+.pw-rules li::before { content: "○"; display: inline-block; width: 1.4em; color: #b5b8b4; }
+.pw-rules li.ok { color: #1f6b3a; }
+.pw-rules li.ok::before { content: "✓"; color: #1f6b3a; font-weight: bold; }
+.home-tile {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 200px; border-radius: 18px; background: #fff; border: 3px solid #d7dcd9;
+    text-decoration: none; color: var(--text); text-align: center; padding: 20px;
+    transition: transform .1s, border-color .1s;
+}
+a.home-tile:hover { border-color: var(--board); transform: translateY(-2px); color: var(--text); }
+.home-tile .tile-icon { font-size: 3rem; line-height: 1; margin-bottom: 8px; }
+.home-tile .tile-name { font-size: 1.6rem; font-weight: bold; }
+.home-tile .tile-status { margin-top: 6px; color: #1f6b3a; font-weight: bold; }
+.home-tile .tile-status.muted { color: var(--muted); font-weight: normal; font-size: .9rem; }
+.tile-test { border-top: 10px solid var(--chalk-green); }
+.tile-attend { border-top: 10px solid var(--chalk-orange); }
+.home-tile.disabled { background: #f6f4ef; color: #9a9f9b; border-style: dashed; cursor: not-allowed; }

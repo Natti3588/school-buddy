@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='Teacher',
+            name='User',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('password', models.CharField(max_length=128, verbose_name='password')),
@@ -27,11 +27,13 @@ class Migration(migrations.Migration):
                 ('user_permissions', models.ManyToManyField(blank=True, help_text='Specific permissions for this user.', related_name='user_set', related_query_name='user', to='auth.permission', verbose_name='user permissions')),
             ],
             options={
+                # 0005 で accounts_user に変えるまでは、最初に作ったときのテーブル名のまま
+                'db_table': 'accounts_teacher',
                 'verbose_name': '教員',
                 'verbose_name_plural': '教員',
             },
             managers=[
-                ('objects', accounts.models.TeacherManager()),
+                ('objects', accounts.models.UserManager()),
             ],
         ),
     ]

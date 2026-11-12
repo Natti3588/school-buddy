@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    {% include "_head.html" %}
+    <title>{% block title %}{{ system_name }}{% endblock %}</title>
+</head>
+<!-- 生徒の画面はノート風の背景にする（教員用の base.html はサイドバーがあるので使わない） -->
+<body class="test-body">
+
+<!-- 黒板風ヘッダー -->
+<header class="test-header">
+    <div class="container d-flex justify-content-between align-items-center py-3">
+        <span class="chalk-font fs-4">{% block heading %}{{ system_name }}{% endblock %}</span>
+        <!-- 右側に出すもの（名前・ログアウト）は画面ごとに決める。紙芝居のとおり、出すのはトップ画面だけ -->
+        <span>{% block header_right %}{% endblock %}</span>
+    </div>
+</header>
+
+<main class="container py-4 py-md-5">
+    {% block content %}{% endblock %}
+</main>
+
+</body>
+</html>
