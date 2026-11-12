@@ -13,8 +13,6 @@ class UserAdmin(BaseUserAdmin):
     ordering = ("user_id",)
     fieldsets = (
         (None, {"fields": ("user_id", "name", "role", "school", "password", "must_change_password")}),
-        # 生徒の登録端末。空にして保存すると登録を解除できる（教員の画面から解除できるようになるまでの代わり）
-        ("端末", {"fields": ("device_id",)}),
         ("権限", {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")}),
         ("日時", {"fields": ("last_login",)}),
     )

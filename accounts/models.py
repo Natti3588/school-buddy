@@ -69,10 +69,6 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     # True のあいだは、パスワード変更画面しか開けない（生徒の初回ログイン）
     must_change_password = models.BooleanField("パスワード変更が必要", default=False)
-    # 生徒が使うタブレット（Cookie に保存した UUID）。生徒の初回ログインのときに自動で登録する
-    # 代返を防ぐため、1つの端末には1人の生徒だけ（unique）、1人の生徒は1つの端末だけ（1つの欄）にする
-    # 空にすると登録が解除され、次にログインした端末が登録される
-    device_id = models.UUIDField("登録端末", null=True, blank=True, unique=True)
 
     objects = UserManager()
 

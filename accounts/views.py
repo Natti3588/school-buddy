@@ -1,11 +1,9 @@
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth import views as auth_views
-from django.db import IntegrityError, transaction
 from django.urls import reverse_lazy
 from django.views.generic import FormView
 
-from .devices import set_device_cookie
 from .forms import LoginForm
 from .mixins import RoleRequiredMixin
 from .models import Role
@@ -26,24 +24,8 @@ class LoginView(FormView):
         return kwargs
 
     def form_valid(self, form):
-        user = form.get_user()
-        if user.role == Role.STUDENT and user.device_id is None:
-            # 初回ログイン（または教員が登録を解除したあと）なので、今の端末を登録する
-            user.device_id = form.device_id
-            try:
-                with transaction.atomic():
-                    user.save(update_fields=["device_id"])
-            except IntegrityError:
-                # 確かめてから保存するまでの間に、同じ端末を別の生徒が登録した場合（device_id は unique）
-                form.add_error(None, form.error_messages["device_not_allowed"])
-                return self.form_invalid(form)
-
-        login(self.request, user)
-        response = super().form_valid(form)
-        if user.role == Role.STUDENT:
-            # ログインのたびに Cookie を保存しなおして、期限を延ばす
-            set_device_cookie(response, user.device_id)
-        return response
+        login(self.request, form.get_user())
+        return super().form_valid(form)
 
 
 class PasswordChangeView(RoleRequiredMixin, auth_views.PasswordChangeView):
