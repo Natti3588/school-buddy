@@ -1,10 +1,9 @@
-from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth import views as auth_views
 from django.urls import reverse_lazy
-from django.views.generic import FormView
+from django.views.generic import FormView, TemplateView
 
-from .forms import LoginForm
+from .forms import FirstPasswordChangeForm, LoginForm, StudentPasswordChangeForm
 from .mixins import RoleRequiredMixin
 from .models import Role
 
@@ -33,11 +32,23 @@ class PasswordChangeView(RoleRequiredMixin, auth_views.PasswordChangeView):
 
     allowed_roles = [Role.STUDENT]
     template_name = "accounts/password_change.html"
-    success_url = reverse_lazy("student_top")
+    success_url = reverse_lazy("accounts:password_change_done")
+
+    def get_form_class(self):
+        # 初回ログインのときは、今のパスワードを聞かないフォームにする
+        if self.request.user.must_change_password:
+            return FirstPasswordChangeForm
+        return StudentPasswordChangeForm
 
     def form_valid(self, form):
         # 親の form_valid が form.save() でユーザーを保存するので、その前にフラグを下ろしておく
         # （保存のあとはセッションも更新されるので、ログインしたままになる）
         form.user.must_change_password = False
-        messages.success(self.request, "パスワードを変更しました")
         return super().form_valid(form)
+
+
+class PasswordChangeDoneView(RoleRequiredMixin, TemplateView):
+    """パスワード変更完了画面"""
+
+    allowed_roles = [Role.STUDENT]
+    template_name = "accounts/password_change_done.html"

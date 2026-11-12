@@ -3,6 +3,7 @@ from django.views.generic import TemplateView
 
 from accounts.mixins import RoleRequiredMixin
 from accounts.models import Role
+from quizzes.models import Mode, Quiz, Status
 from schools.models import School
 from students.models import classrooms_of_year, current_school_year
 
@@ -65,7 +66,20 @@ class SystemAdminTopView(RoleRequiredMixin, TemplateView):
 
 
 class StudentTopView(RoleRequiredMixin, TemplateView):
-    """生徒のトップ画面（仮。生徒の機能を作ったら中身を差し替える）"""
+    """生徒のトップ画面"""
 
     template_name = "student/top.html"
     allowed_roles = [Role.STUDENT]
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        student = self.request.user.student
+        context["student"] = student
+        # 受付中のオンラインのテスト。
+        # TODO: テストにはまだ対象のクラスがないので、同じ学校の先生が作ったものを全部出している
+        context["open_tests"] = Quiz.objects.filter(
+            author__school=student.classroom.school_id,
+            status=Status.OPEN,
+            mode=Mode.ONLINE,
+        )
+        return context

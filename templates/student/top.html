@@ -1,11 +1,58 @@
 {% extends "student/base.html" %}
 {% block title %}ホーム - {{ system_name }}{% endblock %}
+{% block header_right %}
+    <span class="d-flex align-items-center gap-3">
+        <!-- 生徒の名前・クラス・出席番号は User ではなく Student に持っている -->
+        <span class="d-none d-sm-inline">{{ student.classroom }} {{ student.attendance_number }}番　{{ student.name }} さん</span>
+        <!-- ログアウトは POST で送る（Django の LogoutView は GET を受け付けない） -->
+        <form method="post" action="{% url 'accounts:logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-outline-light">ログアウト</button>
+        </form>
+    </span>
+{% endblock %}
 
 {% block content %}
-<!-- 仮の画面。TODO: 生徒の機能を作ったら中身を差し替える -->
-<div class="note-card p-4">
-    <h1 class="h4 fw-bold mb-2">{{ user.student.name }} さん、ログインしました</h1>
-    <p class="text-muted mb-3">生徒ID：{{ user.student.student_id }}</p>
-    <a href="{% url 'accounts:password_change' %}" class="btn btn-outline-board">パスワードを変更する</a>
+<div class="test-card">
+
+    <h1 class="h3 fw-bold mb-1">こんにちは、{{ student.name }} さん</h1>
+    <!-- D は曜日の短い形（LANGUAGE_CODE が ja なので「月」「火」になる） -->
+    <p class="text-muted mb-4">{{ student.classroom }} {{ student.attendance_number }}番　／　{% now "Y年n月j日（D）" %}</p>
+
+    <div class="row g-3">
+        <!-- テストを受ける。TODO: 生徒がテストを受ける画面を作ったら、ここをリンク（a タグ）にする -->
+        <div class="col-md-6">
+            <div class="home-tile tile-test">
+                <span class="tile-icon" aria-hidden="true">✎</span>
+                <span class="tile-name">テストを受ける</span>
+                {% if open_tests %}
+                <span class="tile-status">受付中 {{ open_tests|length }}件</span>
+                {% else %}
+                <span class="tile-status muted">いま受けられるテストはありません</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 出席する（QRコード：次の段階で作る） -->
+        <div class="col-md-6">
+            <div class="home-tile tile-attend disabled" aria-disabled="true">
+                <span class="tile-icon" aria-hidden="true">▣</span>
+                <span class="tile-name">出席する</span>
+                <span class="tile-status muted">準備中（QRコードで出席）</span>
+            </div>
+        </div>
+    </div>
+
+    {% if open_tests %}
+    <div class="note-card p-3 mt-4">
+        <h2 class="h6 fw-bold mb-2">受付中のテスト</h2>
+        {% for quiz in open_tests %}
+        <div class="d-flex justify-content-between align-items-center py-2 {% if not forloop.last %}border-bottom{% endif %}">
+            <span><span class="badge subject-badge me-2">{{ quiz.get_subject_display }}</span>{{ quiz.title }}</span>
+            <span class="small text-muted">先生が言った受験コードを入力して始めます</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

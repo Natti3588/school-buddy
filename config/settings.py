@@ -96,20 +96,17 @@ DATABASES = {
 # Password validation
 # https://docs.djangoproject.com/en/6.1/ref/settings/#auth-password-validators
 
+# パスワードの条件はユースケース記述「パスワードを変更する」のとおり
+# （8文字以上・英字を入れる・数字を入れる。使えない文字が入っていたら不正な文字とする）
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
-        # 標準では username・email などの欄を見るが、このシステムの User の欄は user_id と name
-        "OPTIONS": {"user_attributes": ("user_id", "name")},
-    },
     {
         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
     },
     {
-        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+        "NAME": "accounts.validators.LetterAndDigitValidator",
     },
     {
-        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+        "NAME": "accounts.validators.AllowedCharactersValidator",
     },
 ]
 
