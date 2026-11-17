@@ -96,6 +96,17 @@ def classrooms_of_year(school, year):
     )
 
 
+def homeroom_classroom(teacher):
+    """その先生が担任をしている、今の年度のクラス（担任でなければ None）"""
+    # 去年度に担任したクラスは対象にしない（生徒管理で見せるのは今のクラスだけ）
+    # 1人で2クラスを担任することは想定していないが、もしあっても学年・組の順で1つに決める
+    return (
+        Classroom.objects.filter(homeroom_teacher=teacher, year=current_school_year())
+        .order_by("grade", "number")
+        .first()
+    )
+
+
 class Student(models.Model):
     # 保存するときにバックエンドが自動で付ける（画面からは入力・変更させない）
     student_id = models.CharField(

@@ -803,3 +803,8 @@ a.home-tile:hover { border-color: var(--board); transform: translateY(-2px); col
 .tile-test { border-top: 10px solid var(--chalk-green); }
 .tile-attend { border-top: 10px solid var(--chalk-orange); }
 .home-tile.disabled { background: #f6f4ef; color: #9a9f9b; border-style: dashed; cursor: not-allowed; }
+
+/* 生徒管理：生徒ID */
+.student-id { font-size: .95rem; color: var(--text); letter-spacing: .05em; }
+/* 生徒管理：パスワードのリセット完了の初期パスワード */
+.init-pw { font-size: 1.05rem; color: var(--text); background: #f3efe5; padding: 2px 8px; border-radius: 4px; }

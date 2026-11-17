@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}生徒管理 - {{ system_name }}{% endblock %}
+
+{% block content %}
+
+<div class="d-flex flex-wrap justify-content-between align-items-end mb-4 gap-2">
+    <div>
+        <h1 class="h3 fw-bold mb-1">生徒管理</h1>
+        {% if classroom %}
+        <p class="text-muted mb-0">{{ classroom }}（{{ classroom.year }}年度）　／　{{ students|length }}人</p>
+        {% endif %}
+    </div>
+    <a href="{% url 'students:new' %}" class="btn btn-board">＋ 生徒登録</a>
+</div>
+
+{% if not classroom %}
+<!-- 今の年度のクラスで担任をしていない先生 -->
+<div class="alert alert-warning">担任するクラスがありません</div>
+{% else %}
+
+{% if pw_initial %}
+<div class="format-note mb-3">
+    パスワードが <span class="badge badge-draft">初期のまま</span> の生徒が {{ pw_initial }}人 います。
+</div>
+{% endif %}
+
+{% if not students %}
+<!-- 担任のクラスに、まだ生徒を1人も登録していない -->
+<div class="alert alert-warning">生徒が登録されていません</div>
+{% else %}
+
+<div class="note-card">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th class="ps-3 text-nowrap">番号</th>
+                    <th>氏名</th>
+                    <th class="text-nowrap">生徒ID</th>
+                    <th class="text-nowrap">出席</th>
+                    <th class="text-nowrap">パスワード</th>
+                    <th class="pe-3 text-nowrap">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in students %}
+                <tr>
+                    <td class="ps-3">{{ s.attendance_number }}</td>
+                    <td class="text-nowrap">
+                        <span class="fw-bold">{{ s.name }}</span>
+                        <span class="small text-muted d-block">{{ s.furigana }}</span>
+                    </td>
+                    <td><code class="student-id">{{ s.student_id }}</code></td>
+                    <!-- 出席機能（QRコードの出席）を作るまでは、全員「未出席」と表示する -->
+                    <td><span class="badge badge-closed">未出席</span></td>
+                    <td>
+                        {% if s.user.must_change_password %}<span class="badge badge-draft">初期のまま</span>
+                        {% else %}<span class="badge badge-ready">変更済み</span>{% endif %}
+                    </td>
+                    <td class="pe-3">
+                        <button type="button" class="btn btn-sm btn-outline-board text-nowrap"
+                                data-bs-toggle="modal" data-bs-target="#resetModal"
+                                data-name="{{ s.name }}" data-id="{{ s.student_id }}"
+                                data-url="{% url 'students:reset' s.student_id %}">
+                            パスワードをリセット
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+<p class="small text-muted mt-2">※「出席」は今日の出席です（QRコードの出席機能で使います）。</p>
+
+<!-- パスワードリセットの確認 -->
+<div class="modal fade" id="resetModal" tabindex="-1" aria-labelledby="resetTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title h5 fw-bold" id="resetTitle">パスワードをリセットしますか？</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="閉じる"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2"><span class="fw-bold" id="resetName"></span>（生徒ID：<code class="student-id" id="resetId"></code>）</p>
+                <p class="small text-muted mb-0">
+                    パスワードを初期パスワードに戻します。今のパスワードは使えなくなります。<br>
+                    生徒は次にログインしたとき、パスワードを変更します。
+                </p>
+            </div>
+            <!-- パスワードを書き換えるので、リンク（GET）ではなく POST で送る -->
+            <form method="post" id="resetForm" class="modal-footer">
+                {% csrf_token %}
+                <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">キャンセル</button>
+                <button type="submit" class="btn btn-board px-4">リセットする</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// 押した生徒の名前・IDを確認画面に入れ、送り先をその生徒のリセットの URL にする
+document.getElementById("resetModal").addEventListener("show.bs.modal", function (e) {
+    const b = e.relatedTarget;
+    document.getElementById("resetName").textContent = b.dataset.name;
+    document.getElementById("resetId").textContent = b.dataset.id;
+    document.getElementById("resetForm").action = b.dataset.url;
+});
+</script>
+
+{% endif %}
+
+{% endif %}
+
+{% endblock %}

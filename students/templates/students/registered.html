@@ -3,7 +3,8 @@
 
 {% block content %}
 
-<h1 class="h3 fw-bold mb-3">生徒登録</h1>
+<a href="{% url 'students:list' %}" class="small link-board">‹ 生徒管理</a>
+<h1 class="h3 fw-bold mt-1 mb-3">生徒登録</h1>
 {% include "students/_steps.html" with step=3 %}
 
 <div class="note-card form-card p-4 p-md-5 text-center">
@@ -21,7 +22,7 @@
     </table>
 
     <div class="d-flex flex-wrap justify-content-center gap-2">
-        <a href="{% url 'top' %}" class="btn btn-outline-board px-4">ホームへ戻る</a>
+        <a href="{% url 'students:list' %}" class="btn btn-outline-board px-4">生徒一覧へ</a>
         <a href="{% url 'students:new' %}" class="btn btn-board px-4">続けて登録する</a>
     </div>
 </div>

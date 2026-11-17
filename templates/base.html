@@ -59,8 +59,9 @@
                 <a href="{% url 'top' %}" class="side-link {% if ep == 'top' %}active{% endif %}">
                     <span class="dot c-home"></span>ホーム
                 </a>
-                <a href="{% url 'students:new' %}" class="side-link {% if ep == 'students:new' or ep == 'students:confirm' or ep == 'students:registered' %}active{% endif %}">
-                    <span class="dot c-student"></span>生徒登録
+                <!-- 生徒管理（生徒登録・パスワードのリセットもこの中から開くので、students の画面ではすべて選んだ表示にする） -->
+                <a href="{% url 'students:list' %}" class="side-link {% if request.resolver_match.app_name == 'students' %}active{% endif %}">
+                    <span class="dot c-student"></span>生徒管理
                 </a>
                 <!-- TODO: 各機能の画面を作ったら href と active の条件を差し替える -->
                 <a href="#" class="side-link">
