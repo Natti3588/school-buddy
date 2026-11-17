@@ -1,16 +1,34 @@
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views import View
-from django.views.generic import DetailView
+from django.views.generic import DetailView, TemplateView
 
 from accounts.mixins import RoleRequiredMixin
 from accounts.models import Role
 
 from .forms import ClassroomForm, StudentForm, selectable_classes
-from .models import Student, classrooms_of_year, current_school_year
+from .models import Student, classrooms_of_year, current_school_year, homeroom_classroom
 
 # 入力画面 → 確認画面 の間、入力内容をセッションに入れておくときのキー
 SESSION_KEY = "student_new_data"
+
+
+class StudentListView(RoleRequiredMixin, TemplateView):
+    """生徒管理（担任のクラスの生徒一覧）"""
+
+    allowed_roles = [Role.TEACHER]
+    template_name = "students/list.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        classroom = homeroom_classroom(self.request.user)
+        context["classroom"] = classroom
+        if classroom is not None:
+            # パスワードの状態はユーザー側に持っているので、生徒と一緒に1回の SQL で読む
+            students = list(classroom.students.select_related("user").order_by("attendance_number"))
+            context["students"] = students
+            context["pw_initial"] = sum(1 for s in students if s.user.must_change_password)
+        return context
 
 
 class StudentNewView(RoleRequiredMixin, View):

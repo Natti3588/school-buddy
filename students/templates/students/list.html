@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}生徒管理 - {{ system_name }}{% endblock %}
+
+{% block content %}
+
+<div class="d-flex flex-wrap justify-content-between align-items-end mb-4 gap-2">
+    <div>
+        <h1 class="h3 fw-bold mb-1">生徒管理</h1>
+        {% if classroom %}
+        <p class="text-muted mb-0">{{ classroom }}（{{ classroom.year }}年度）　／　{{ students|length }}人</p>
+        {% endif %}
+    </div>
+    <a href="{% url 'students:new' %}" class="btn btn-board">＋ 生徒登録</a>
+</div>
+
+{% if not classroom %}
+<!-- 今の年度のクラスで担任をしていない先生 -->
+<div class="alert alert-warning">担任するクラスがありません</div>
+{% else %}
+
+{% if pw_initial %}
+<div class="format-note mb-3">
+    パスワードが <span class="badge badge-draft">初期のまま</span> の生徒が {{ pw_initial }}人 います。初めてログインしたときに、生徒が自分で変更します。
+</div>
+{% endif %}
+
+<div class="note-card">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th class="ps-3 text-nowrap">番号</th>
+                    <th>氏名</th>
+                    <th class="text-nowrap">生徒ID</th>
+                    <th class="text-nowrap">出席</th>
+                    <th class="text-nowrap">パスワード</th>
+                    <th class="pe-3 text-nowrap">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in students %}
+                <tr>
+                    <td class="ps-3">{{ s.attendance_number }}</td>
+                    <td class="text-nowrap">
+                        <span class="fw-bold">{{ s.name }}</span>
+                        <span class="small text-muted d-block">{{ s.furigana }}</span>
+                    </td>
+                    <td><code class="student-id">{{ s.student_id }}</code></td>
+                    <!-- 出席機能（QRコードの出席）を作るまでは、全員「未出席」と表示する -->
+                    <td><span class="badge badge-closed">未出席</span></td>
+                    <td>
+                        {% if s.user.must_change_password %}<span class="badge badge-draft">初期のまま</span>
+                        {% else %}<span class="badge badge-ready">変更済み</span>{% endif %}
+                    </td>
+                    <td class="pe-3"></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+<p class="small text-muted mt-2">※「出席」は今日の出席です（QRコードの出席機能で使います）。</p>
+
+{% endif %}
+
+{% endblock %}
