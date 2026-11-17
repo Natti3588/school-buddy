@@ -20,9 +20,14 @@
 
 {% if pw_initial %}
 <div class="format-note mb-3">
-    パスワードが <span class="badge badge-draft">初期のまま</span> の生徒が {{ pw_initial }}人 います。初めてログインしたときに、生徒が自分で変更します。
+    パスワードが <span class="badge badge-draft">初期のまま</span> の生徒が {{ pw_initial }}人 います。
 </div>
 {% endif %}
+
+{% if not students %}
+<!-- 担任のクラスに、まだ生徒を1人も登録していない -->
+<div class="alert alert-warning">生徒が登録されていません</div>
+{% else %}
 
 <div class="note-card">
     <div class="table-responsive">
@@ -102,6 +107,8 @@ document.getElementById("resetModal").addEventListener("show.bs.modal", function
     document.getElementById("resetForm").action = b.dataset.url;
 });
 </script>
+
+{% endif %}
 
 {% endif %}
 
