@@ -3,7 +3,8 @@
 
 {% block content %}
 
-<h1 class="h3 fw-bold mb-1">生徒登録</h1>
+<a href="{% url 'students:list' %}" class="small link-board">‹ 生徒管理</a>
+<h1 class="h3 fw-bold mt-1 mb-1">生徒登録</h1>
 <p class="text-muted mb-3">クラスを選んで生徒を登録します。</p>
 
 {% include "students/_steps.html" %}
