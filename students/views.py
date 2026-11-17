@@ -4,7 +4,7 @@ from django.views import View
 from django.views.generic import DetailView, TemplateView
 
 from accounts.mixins import RoleRequiredMixin
-from accounts.models import Role
+from accounts.models import STUDENT_INITIAL_PASSWORD, Role
 
 from .forms import ClassroomForm, StudentForm, selectable_classes
 from .models import Student, classrooms_of_year, current_school_year, homeroom_classroom
@@ -28,6 +28,48 @@ class StudentListView(RoleRequiredMixin, TemplateView):
             students = list(classroom.students.select_related("user").order_by("attendance_number"))
             context["students"] = students
             context["pw_initial"] = sum(1 for s in students if s.user.must_change_password)
+        return context
+
+
+class StudentPasswordResetView(RoleRequiredMixin, View):
+    """生徒のパスワードを初期パスワードに戻す（POST だけ受け付ける）"""
+
+    allowed_roles = [Role.TEACHER]
+
+    def post(self, request, student_id):
+        # リセットできるのは、自分が担任する今の年度のクラスの生徒だけ
+        # （担任のクラスがないときは classroom=None で探すので、どの生徒も見つからず 404 になる）
+        student = get_object_or_404(
+            Student.objects.select_related("user"),
+            student_id=student_id,
+            classroom=homeroom_classroom(request.user),
+        )
+        user = student.user
+        user.set_password(STUDENT_INITIAL_PASSWORD)
+        # 次にログインしたとき、パスワード変更画面に進ませる
+        user.must_change_password = True
+        # パスワードが変わるので、その生徒がログイン中なら次の操作でログアウトされる
+        user.save()
+        # 再読み込みでもう一度リセットしないように、完了画面へはリダイレクトで移る
+        return redirect("students:reset_done", student_id=student.student_id)
+
+
+class StudentPasswordResetDoneView(RoleRequiredMixin, DetailView):
+    """パスワードのリセット完了（表示だけ。パスワードは書き換えない）"""
+
+    allowed_roles = [Role.TEACHER]
+    template_name = "students/reset_done.html"
+    context_object_name = "s"
+    slug_field = "student_id"
+    slug_url_kwarg = "student_id"
+
+    def get_queryset(self):
+        # 自分が担任するクラスの生徒だけ表示できる
+        return Student.objects.filter(classroom=homeroom_classroom(self.request.user))
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["initial_password"] = STUDENT_INITIAL_PASSWORD
         return context
 
 

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}パスワードのリセット - {{ system_name }}{% endblock %}
+
+{% block content %}
+
+<a href="{% url 'students:list' %}" class="small link-board">‹ 生徒管理</a>
+<h1 class="h3 fw-bold mt-1 mb-3">パスワードのリセット</h1>
+
+<div class="note-card form-card p-4 p-md-5 text-center">
+    <div class="display-4 mb-2" style="color: var(--board);" aria-hidden="true">✓</div>
+    <h2 class="h4 fw-bold mb-3">パスワードをリセットしました</h2>
+
+    <table class="table table-sm text-start mx-auto mb-3" style="max-width: 380px;">
+        <tbody>
+            <tr><th class="text-muted fw-normal">学年・組</th><td>{{ s.classroom }}</td></tr>
+            <tr><th class="text-muted fw-normal">出席番号</th><td>{{ s.attendance_number }}</td></tr>
+            <tr><th class="text-muted fw-normal">氏名</th><td>{{ s.name }}（{{ s.furigana }}）</td></tr>
+            <tr><th class="text-muted fw-normal">生徒ID</th><td><code class="student-id">{{ s.student_id }}</code></td></tr>
+            <tr><th class="text-muted fw-normal">新しい初期パスワード</th><td><code class="init-pw">{{ initial_password }}</code></td></tr>
+        </tbody>
+    </table>
+    <p class="small text-muted mb-4">生徒は次にログインしたとき、自分でパスワードを変更します。</p>
+
+    <div class="d-flex flex-wrap justify-content-center gap-2">
+        <a href="{% url 'students:list' %}" class="btn btn-board px-4">生徒一覧へ</a>
+    </div>
+</div>
+
+{% endblock %}
