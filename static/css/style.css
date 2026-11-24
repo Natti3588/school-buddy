@@ -753,6 +753,12 @@ body {
 .att-btns .btn-check:checked + .s3 { background: #d9a520; border-color: #d9a520; color: #fff; }
 .att-btns .btn-check:checked + .s4 { background: #d97d3a; border-color: #d97d3a; color: #fff; }
 .soon-card { border-style: dashed; background: #faf7f0; }
+/* 期間集計：学年・学期の切り替え（上のタブより一段控えめに） */
+.term-select { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.term-label { font-size: .9rem; color: var(--muted); font-weight: bold; }
+.term-tabs { background: transparent; border: 1px solid #ddd5c3; padding: 3px; }
+.term-tabs a { padding: 5px 16px; font-size: .92rem; }
+.term-tabs a.active { background: #fff; color: var(--board); box-shadow: 0 0 0 1.5px var(--board); }
 .btn-check:checked + .btn-outline-board { background: var(--board); border-color: var(--board); color: #fff; }
 
 /* ---------- 生徒用テスト（テスト作成の問題を表示） ---------- */
@@ -808,3 +814,81 @@ a.home-tile:hover { border-color: var(--board); transform: translateY(-2px); col
 .student-id { font-size: .95rem; color: var(--text); letter-spacing: .05em; }
 /* 生徒管理：パスワードのリセット完了の初期パスワード */
 .init-pw { font-size: 1.05rem; color: var(--text); background: #f3efe5; padding: 2px 8px; border-radius: 4px; }
+
+/* ---------- QRコードで出席 ---------- */
+.qr-panel:fullscreen { display: flex; flex-direction: column; justify-content: center; border-radius: 0; }
+.qr-panel:fullscreen .qr-box { width: min(70vh, 70vw); }
+.qr-clock { display: flex; justify-content: center; align-items: center; gap: 10px; }
+.qr-clock #clock { font-size: 1.7rem; font-weight: bold; font-variant-numeric: tabular-nums; }
+.qr-box {
+    width: min(300px, 100%); aspect-ratio: 1; background: #fff;
+    border: 1px solid #e2dccd; border-radius: 10px; padding: 6px;
+    display: flex; align-items: center; justify-content: center; color: var(--muted);
+}
+.qr-box svg { width: 100%; height: 100%; }
+.qr-box.closed { background: #f3efe5; font-weight: bold; }
+.qr-timer { max-width: 300px; }
+.qr-rules { max-width: 340px; margin-left: auto; margin-right: auto; padding-left: 1.1em; line-height: 1.6; }
+
+/* 人数 */
+.qr-counts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.qr-count {
+    display: flex; justify-content: space-between; align-items: baseline;
+    border: 1px solid #e2dccd; border-radius: 8px; padding: 4px 10px; background: #fff;
+}
+.qr-count span { color: var(--muted); font-size: .8rem; }
+.qr-count b { font-size: 1.3rem; }
+.qr-count.st-done   { border-top: 4px solid #3b9b5f; }
+.qr-count.st-late   { border-top: 4px solid #e0b020; }
+.qr-count.st-wait   { border-top: 4px solid #c9c1ae; }
+.qr-count.st-absent { border-top: 4px solid #d2475b; }
+
+/* 生徒一覧：2列で40人くらいまで1画面に入るように */
+.qr-list {
+    list-style: none; padding: 0; margin: 0;
+    columns: 2; column-gap: 8px;
+}
+.qr-list li {
+    display: flex; align-items: center; gap: 6px;
+    padding: 1px 8px; margin-bottom: 2px; border-radius: 6px;
+    font-size: .86rem; line-height: 1.45;
+    border: 1px solid #ece6d8; background: #fff;
+    break-inside: avoid;
+    transition: background .3s;
+}
+.qr-mark { width: 10px; height: 10px; border-radius: 50%; flex: none; border: 1.5px solid #c9c1ae; }
+.qr-no { width: 1.6em; text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+.qr-name { font-weight: bold; white-space: nowrap; }
+.qr-state { font-size: .8rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.qr-list li.done   { background: #e8f5ec; border-color: #cfe9d8; }
+.qr-list li.done .qr-mark { background: #3b9b5f; border-color: #3b9b5f; }
+.qr-list li.done .qr-state { color: #1f6b3a; }
+/* 遅刻・欠席は教室に映る画面では色を変えない（「まだ」と同じ白のまま） */
+.qr-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.legend { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: -1px; }
+.legend.done   { background: #3b9b5f; }
+.legend.late   { background: #e0b020; }
+.legend.wait   { background: #fff; border: 1.5px solid #c9c1ae; }
+.legend.absent { background: #d2475b; }
+
+@media (max-width: 575.98px) {
+    .qr-list { columns: 1; }
+    .qr-counts { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ---------- 生徒：QRコードで出席 ---------- */
+/* カメラの映像（html5-qrcode が video を入れる） */
+.scan-reader {
+    width: min(360px, 100%); min-height: 240px;
+    background: #2b2f2c; border-radius: 12px; overflow: hidden;
+}
+.scan-reader video { display: block; width: 100%; }
+/* 出席完了の印 */
+.done-mark {
+    width: 88px; height: 88px; margin: 0 auto 16px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%; background: #3b9b5f; color: #fff;
+    font-size: 3rem; font-weight: bold; line-height: 1;
+}
+.done-mark.late { background: #e0b020; }

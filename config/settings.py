@@ -37,6 +37,8 @@ ALLOWED_HOSTS = [host.strip() for host in os.environ.get("DJANGO_ALLOWED_HOSTS",
 # Application definition
 
 INSTALLED_APPS = [
+    # daphne は先頭に置く（runserver が ASGI で動き、WebSocket も使えるようになる）
+    "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -47,6 +49,7 @@ INSTALLED_APPS = [
     "schools",
     "students",
     "quizzes",
+    "attendance",
 ]
 
 MIDDLEWARE = [
@@ -80,6 +83,20 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "config.wsgi.application"
+# HTTP と WebSocket（出欠管理の QR 画面）を受け付ける入口
+ASGI_APPLICATION = "config.asgi.application"
+
+# WebSocket のグループに通知を送る仕組み。InMemory は同じプロセスの中でしか届かないので、
+# 本番の daphne は1プロセスで動かす（プロセスを増やすときは channels_redis に替える）
+CHANNEL_LAYERS = {
+    "default": {"BACKEND": "channels.layers.InMemoryChannelLayer"},
+}
+
+# 出欠管理：QR コードで出席できる時刻（"時:分"）
+# この時刻より前に読むと出席、LATE〜CLOSE は遅刻、CLOSE で受付終了。昼間に試すときは環境変数で変える
+ATTENDANCE_OPEN = os.environ.get("ATTENDANCE_OPEN", "8:25")
+ATTENDANCE_LATE = os.environ.get("ATTENDANCE_LATE", "8:40")
+ATTENDANCE_CLOSE = os.environ.get("ATTENDANCE_CLOSE", "8:50")
 
 
 # Database

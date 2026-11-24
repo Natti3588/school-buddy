@@ -76,7 +76,8 @@
                 <a href="{% url 'quizzes:list' %}" class="side-link {% if request.resolver_match.app_name == 'quizzes' %}active{% endif %}">
                     <span class="dot c-quiz"></span>テスト作成
                 </a>
-                <a href="#" class="side-link">
+                <!-- 出欠管理（QR コード・期間集計もこの中から開く） -->
+                <a href="{% url 'attendance:today' %}" class="side-link {% if request.resolver_match.app_name == 'attendance' %}active{% endif %}">
                     <span class="dot c-attend"></span>出欠管理
                 </a>
                 {% endif %}

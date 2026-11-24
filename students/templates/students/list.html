@@ -51,8 +51,15 @@
                         <span class="small text-muted d-block">{{ s.furigana }}</span>
                     </td>
                     <td><code class="student-id">{{ s.student_id }}</code></td>
-                    <!-- 出席機能（QRコードの出席）を作るまでは、全員「未出席」と表示する -->
-                    <td><span class="badge badge-closed">未出席</span></td>
+                    <!-- 今日の出欠（出欠管理で記録したもの。記録がなければ「未出席」） -->
+                    <td>
+                        {% with a=s.today_attendance %}
+                        {% if not a %}<span class="badge badge-closed">未出席</span>
+                        {% elif a.status == "present" %}<span class="badge badge-open">出席</span>
+                        {% elif a.status == "absent" %}<span class="badge badge-closed">欠席</span>
+                        {% else %}<span class="badge badge-draft">{{ a.get_status_display }}</span>{% endif %}
+                        {% endwith %}
+                    </td>
                     <td>
                         {% if s.user.must_change_password %}<span class="badge badge-draft">初期のまま</span>
                         {% else %}<span class="badge badge-ready">変更済み</span>{% endif %}
@@ -71,7 +78,7 @@
         </table>
     </div>
 </div>
-<p class="small text-muted mt-2">※「出席」は今日の出席です（QRコードの出席機能で使います）。</p>
+<p class="small text-muted mt-2">※「出席」は今日の出席です（出欠管理で記録したもの）。</p>
 
 <!-- パスワードリセットの確認 -->
 <div class="modal fade" id="resetModal" tabindex="-1" aria-labelledby="resetTitle" aria-hidden="true">

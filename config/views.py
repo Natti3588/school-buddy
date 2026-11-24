@@ -3,6 +3,7 @@ from django.views.generic import TemplateView
 
 from accounts.mixins import RoleRequiredMixin
 from accounts.models import Role
+from attendance.models import todays_record
 from quizzes.models import Mode, Quiz, Status
 from schools.models import School
 from students.models import classrooms_of_year, current_school_year
@@ -82,4 +83,6 @@ class StudentTopView(RoleRequiredMixin, TemplateView):
             status=Status.OPEN,
             mode=Mode.ONLINE,
         )
+        # 今日の出欠（「出席する」のタイルに出す）
+        context["today_attendance"] = todays_record(student)
         return context

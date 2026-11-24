@@ -5,6 +5,7 @@ from django.views.generic import DetailView, TemplateView
 
 from accounts.mixins import RoleRequiredMixin
 from accounts.models import STUDENT_INITIAL_PASSWORD, Role
+from attendance.models import todays_records
 
 from .forms import ClassroomForm, StudentForm, selectable_classes
 from .models import Student, classrooms_of_year, current_school_year, homeroom_classroom
@@ -26,6 +27,10 @@ class StudentListView(RoleRequiredMixin, TemplateView):
         if classroom is not None:
             # パスワードの状態はユーザー側に持っているので、生徒と一緒に1回の SQL で読む
             students = list(classroom.students.select_related("user").order_by("attendance_number"))
+            # 今日の出欠（記録がない生徒は None。テンプレートで「未出席」と表示する）
+            records = todays_records(classroom)
+            for s in students:
+                s.today_attendance = records.get(s.pk)
             context["students"] = students
             context["pw_initial"] = sum(1 for s in students if s.user.must_change_password)
         return context

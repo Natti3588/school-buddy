@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+{% block title %}QRコードで出席 - {{ system_name }}{% endblock %}
+
+{% block content %}
+
+<a href="{% url 'attendance:today' %}" class="small link-board">‹ 出欠管理</a>
+
+{% if not classroom %}
+<h1 class="h3 fw-bold mt-1 mb-3">QRコードで出席</h1>
+<div class="alert alert-warning">担任するクラスがありません</div>
+{% else %}
+
+<div class="d-flex flex-wrap justify-content-between align-items-end mt-1 mb-3 gap-2">
+    <div>
+        <h1 class="h3 fw-bold mb-1">QRコードで出席</h1>
+        <p class="text-muted mb-0">{{ classroom }}　／　{% now "Y年n月j日（D）" %}　朝の出席</p>
+    </div>
+    <!-- この画面を閉じると新しい QR コードが出なくなる（最後の QR コードも40秒で使えなくなる） -->
+    <a href="{% url 'attendance:today' %}?qr=1" class="btn btn-board">受付を終了して出欠に反映 ›</a>
+</div>
+
+<div class="row g-3">
+    <!-- 左：QRコード（テレビ・黒板に映す） -->
+    <div class="col-lg-5 col-xxl-4">
+        <div class="note-card p-3 text-center qr-panel" id="qrPanel">
+            <div class="qr-clock">
+                <span id="clock"></span>
+                <span id="phase" class="badge badge-closed">接続中</span>
+            </div>
+            <p class="text-muted small mb-2" id="phaseText">&nbsp;</p>
+            <div class="qr-box closed mx-auto" id="qrBox" aria-label="出席用のQRコード">接続しています…</div>
+            <div class="qr-timer mx-auto mt-2" hidden>
+                <div class="progress" style="height: 5px;">
+                    <div class="progress-bar" id="qrBar" style="width: 100%; background: var(--board);"></div>
+                </div>
+                <div class="small text-muted mt-1">あと <b id="qrLeft">30</b> 秒で新しいQRコードに変わります</div>
+            </div>
+            <ul class="qr-rules text-start small text-muted mt-2 mb-2">
+                <li>{{ times.open }}〜{{ times.late }}：出席　{{ times.late }}〜{{ times.close }}：遅刻</li>
+                <li>{{ times.close }}までに読み取らなかった生徒は「欠席」</li>
+                <li>QRコードは30秒ごとに変わります</li>
+            </ul>
+            <button type="button" class="btn btn-sm btn-outline-board" id="fullBtn">全画面で表示</button>
+        </div>
+    </div>
+
+    <!-- 右：生徒一覧（2列。教室に映すので、色が変わるのは「出席」だけ。遅刻・欠席はほかの生徒にわからないよう白のまま） -->
+    <div class="col-lg-7 col-xxl-8">
+        <div class="note-card p-3">
+            <div class="qr-counts mb-2">
+                <div class="qr-count st-done"><span>出席</span><b id="cDone">0</b></div>
+                <div class="qr-count st-late"><span>遅刻</span><b id="cLate">0</b></div>
+                <div class="qr-count st-wait"><span>まだ</span><b id="cWait">0</b></div>
+                <div class="qr-count st-absent"><span>欠席</span><b id="cAbsent">0</b></div>
+            </div>
+            {% if students %}
+            <ol class="qr-list" id="qrList">
+                {% for s in students %}
+                <li class="wait" data-id="{{ s.pk }}">
+                    <span class="qr-mark" aria-hidden="true"></span>
+                    <span class="qr-no">{{ s.attendance_number }}</span>
+                    <span class="qr-name">{{ s.name }}</span>
+                    <span class="qr-state"></span>
+                </li>
+                {% endfor %}
+            </ol>
+            {% else %}
+            <div class="alert alert-warning mb-0">生徒が登録されていません</div>
+            {% endif %}
+            <div class="qr-legend small text-muted mt-2">
+                <span><i class="legend done"></i>出席</span>
+                <span><i class="legend wait"></i>それ以外</span>
+                <span>遅刻・欠席の生徒は、受付終了後に出欠管理の画面で確認できます</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{ items|json_script:"att-items" }}
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+<script>
+(function () {
+    const SCAN_PATH = "{{ scan_path|escapejs }}";
+    const PHASES = {
+        before: { label: "受付前", badge: "badge-closed", note: "{{ times.open }}から受付を始めます" },
+        open:   { label: "受付中", badge: "badge-open",   note: "{{ times.late }}までに読み取ると「出席」になります" },
+        late:   { label: "遅刻の時間", badge: "badge-draft", note: "今から読み取ると「遅刻」になります" },
+        closed: { label: "受付終了", badge: "badge-closed", note: "読み取らなかった生徒は「欠席」になりました" },
+    };
+    const box = document.getElementById("qrBox");
+    const timer = document.querySelector(".qr-timer");
+    let phase = null;
+    let left = 0;
+    let total = 30;
+
+    // ---- 時計（この画面のパソコンの時刻） ----
+    function tickClock() {
+        const now = new Date();
+        document.getElementById("clock").textContent = now.getHours() + ":" + String(now.getMinutes()).padStart(2, "0");
+    }
+
+    // ---- QRコード ----
+    function showMessage(text) {
+        box.classList.add("closed");
+        box.textContent = text;
+        timer.hidden = true;
+    }
+    function drawQr(token) {
+        if (typeof qrcode === "undefined") {
+            showMessage("QRコードを表示できません（インターネットに接続してください）");
+            return;
+        }
+        // 生徒の読み取り画面は、この URL の t を取り出してサーバーに送る
+        const qr = qrcode(0, "M");
+        qr.addData(location.origin + SCAN_PATH + "?t=" + encodeURIComponent(token));
+        qr.make();
+        box.classList.remove("closed");
+        box.innerHTML = qr.createSvgTag({ cellSize: 8, margin: 2, scalable: true });
+        timer.hidden = false;
+    }
+    function tickQr() {
+        if (left <= 0) return;
+        left -= 1;
+        document.getElementById("qrLeft").textContent = left;
+        document.getElementById("qrBar").style.width = (left / total * 100) + "%";
+    }
+    function setPhase(next) {
+        phase = next;
+        const p = PHASES[next];
+        const badge = document.getElementById("phase");
+        badge.textContent = p.label;
+        badge.className = "badge " + p.badge;
+        document.getElementById("phaseText").textContent = p.note;
+    }
+
+    // ---- 生徒一覧 ----
+    const states = {};   // 生徒の pk: { status, time }
+    const rows = {};
+    document.querySelectorAll("#qrList li").forEach(li => rows[li.dataset.id] = li);
+    function classOf(state) {
+        if (!state) return phase === "closed" ? "absent" : "wait";
+        // 早退は朝は来ているので、出席と同じにする
+        if (state.status === "present" || state.status === "early_leave") return "done";
+        return state.status;   // late / absent
+    }
+    function render() {
+        Object.entries(rows).forEach(([id, li]) => {
+            const state = states[id];
+            const cls = classOf(state);
+            li.className = cls;
+            // 遅刻・欠席は画面に出さない（数だけ数える）
+            li.querySelector(".qr-state").textContent = cls === "done" ? ("出席 " + (state.time || "")).trim() : "";
+        });
+        const count = cls => document.querySelectorAll("#qrList li." + cls).length;
+        document.getElementById("cDone").textContent = count("done");
+        document.getElementById("cLate").textContent = count("late");
+        document.getElementById("cWait").textContent = count("wait");
+        document.getElementById("cAbsent").textContent = count("absent");
+    }
+    function applyItems(items) {
+        items.forEach(item => states[item.student] = { status: item.status, time: item.time });
+        render();
+    }
+    applyItems(JSON.parse(document.getElementById("att-items").textContent));
+
+    // ---- サーバーとの接続（トークンと、生徒が読み取ったことが届く） ----
+    const scheme = location.protocol === "https:" ? "wss" : "ws";
+    const socket = new WebSocket(scheme + "://" + location.host + "/ws/attendance/");
+    socket.addEventListener("message", e => {
+        const data = JSON.parse(e.data);
+        if (data.type === "status") {
+            applyItems(data.items);
+            return;
+        }
+        // data.type === "phase"
+        setPhase(data.phase);
+        if (data.phase === "closed") {
+            showMessage("受付を終了しました");
+            render();   // まだの生徒を欠席にする
+        } else if (data.phase === "before") {
+            showMessage("受付は{{ times.open }}からです");
+        } else {
+            drawQr(data.token);
+            left = total = data.seconds;
+            document.getElementById("qrLeft").textContent = left;
+            document.getElementById("qrBar").style.width = "100%";
+        }
+    });
+    socket.addEventListener("close", () => {
+        // 受付終了のあとはサーバーが送るものがないので、そのままにする
+        if (phase === "closed") return;
+        // 新しいトークンが届かないので、古い QR コードを消す
+        showMessage("接続が切れました。画面を再読み込みしてください");
+    });
+
+    tickClock();
+    setInterval(tickClock, 1000);
+    setInterval(tickQr, 1000);
+
+    // 全画面表示（教室のテレビに映すとき）
+    document.getElementById("fullBtn").addEventListener("click", () => {
+        const panel = document.getElementById("qrPanel");
+        if (panel.requestFullscreen) panel.requestFullscreen();
+    });
+})();
+</script>
+
+{% endif %}
+
+{% endblock %}
