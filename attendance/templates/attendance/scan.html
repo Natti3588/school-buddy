@@ -1,0 +1,83 @@
+{% extends "student/base.html" %}
+{% block title %}出席する - {{ system_name }}{% endblock %}
+
+{% block content %}
+<div class="test-card text-center">
+
+    <a href="{% url 'student_top' %}" class="small link-board d-block text-start">‹ ホームへ</a>
+    <h1 class="h3 fw-bold mt-2 mb-1">出席する</h1>
+    <p class="text-muted mb-3">{{ student.classroom }} {{ student.attendance_number }}番　{{ student.name }} さん</p>
+
+    <p class="mb-3">黒板やテレビに映っている<span class="fw-bold">QRコード</span>を、カメラで読み取ってください。</p>
+
+    <!-- サーバーで確かめて出席にできなかったとき（古い QR コード・ほかのクラス・受付時間外） -->
+    <div class="alert alert-danger text-start" id="scanError" role="alert" {% if not error %}hidden{% endif %}>{{ error }}</div>
+
+    <!-- カメラの映像（html5-qrcode がこの中に表示する） -->
+    <div id="reader" class="scan-reader mx-auto"></div>
+    <p class="small text-muted mt-2 mb-0" id="scanStatus">カメラを準備しています…</p>
+
+    <p class="small text-muted mt-3 mb-0">受付：{{ times.open }}〜{{ times.close }}（{{ times.late }}からは遅刻になります）</p>
+
+    <!-- 読み取ったトークンを送るフォーム（CSRF つきの POST） -->
+    <form method="post" id="scanForm">
+        {% csrf_token %}
+        <input type="hidden" name="token" id="token">
+    </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script>
+(function () {
+    const SCAN_PATH = "{% url 'attendance:scan' %}";
+    const status = document.getElementById("scanStatus");
+    const errorBox = document.getElementById("scanError");
+
+    function showError(text) {
+        errorBox.textContent = text;
+        errorBox.hidden = false;
+    }
+
+    if (typeof Html5Qrcode === "undefined") {
+        status.textContent = "読み取りの準備ができません（インターネットに接続してください）";
+        return;
+    }
+
+    // QR コードの中身は「…/attendance/scan/?t=トークン」。出欠管理の QR コードかどうかを確かめてトークンを取り出す
+    function tokenOf(text) {
+        try {
+            const url = new URL(text);
+            if (url.pathname !== SCAN_PATH) return null;
+            return url.searchParams.get("t");
+        } catch (e) {
+            return null;   // URL でない QR コード
+        }
+    }
+
+    const scanner = new Html5Qrcode("reader");
+    let sending = false;
+
+    function onScan(text) {
+        if (sending) return;
+        const token = tokenOf(text);
+        if (!token) {
+            showError("出席用のQRコードではありません");
+            return;   // 読み取りは続ける
+        }
+        sending = true;
+        status.textContent = "送信しています…";
+        document.getElementById("token").value = token;
+        // カメラを止めてから送る（止められなくても送る）
+        scanner.stop().catch(() => {}).finally(() => document.getElementById("scanForm").submit());
+    }
+
+    // 背面カメラを使う（タブレットを QR コードに向けるため）
+    scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 240, height: 240 } }, onScan, () => {})
+        .then(() => status.textContent = "QRコードを枠の中に入れてください")
+        .catch(() => {
+            status.textContent = "";
+            showError("カメラを使えません。カメラの使用を許可してから、画面を再読み込みしてください");
+        });
+})();
+</script>
+{% endblock %}

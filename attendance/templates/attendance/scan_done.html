@@ -1,0 +1,27 @@
+{% extends "student/base.html" %}
+{% block title %}出席完了 - {{ system_name }}{% endblock %}
+
+{% block content %}
+<div class="test-card text-center">
+
+    <div class="done-mark {% if record.status == 'late' %}late{% endif %}" aria-hidden="true">✓</div>
+
+    {% if record.scanned_at %}
+    <!-- QR コードで出席した -->
+    {% if record.status == "late" %}
+    <h1 class="h3 fw-bold mb-2">遅刻で記録しました</h1>
+    {% else %}
+    <h1 class="h3 fw-bold mb-2">出席しました</h1>
+    {% endif %}
+    <p class="mb-1">{% now "n月j日（D）" %}　{{ record.scanned_time }} に読み取りました</p>
+    {% else %}
+    <!-- 先生が出欠の一覧で付けた -->
+    <h1 class="h3 fw-bold mb-2">今日の出欠は記録されています</h1>
+    <p class="mb-1">{% now "n月j日（D）" %}　{{ record.get_status_display }}</p>
+    {% endif %}
+
+    <p class="text-muted mb-4">{{ student.classroom }} {{ student.attendance_number }}番　{{ student.name }} さん</p>
+
+    <a href="{% url 'student_top' %}" class="btn btn-board px-5">ホームへ</a>
+</div>
+{% endblock %}

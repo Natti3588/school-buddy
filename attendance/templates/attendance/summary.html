@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}出欠の期間集計 - {{ system_name }}{% endblock %}
+
+{% block content %}
+
+<div class="mb-3">
+    <h1 class="h3 fw-bold mb-1">出欠管理</h1>
+    {% if classroom %}
+    <p class="text-muted mb-0">
+        {{ classroom }}　／　{{ term_label }}の集計（{% if days %}授業日数 {{ days }}日・{{ first|date:"n月j日" }}〜{% if ongoing %}{% now "n月j日" %}現在{% else %}{{ last|date:"n月j日" }}{% endif %}{% else %}{{ start|date:"n月" }}〜{{ end|date:"n月" }}{% endif %}）
+    </p>
+    {% endif %}
+</div>
+
+{% if not classroom %}
+<!-- 今の年度のクラスで担任をしていない先生 -->
+<div class="alert alert-warning">担任するクラスがありません</div>
+{% else %}
+
+{% include "attendance/_tabs.html" %}
+
+{# 期間：学年 ／ 1学期 ／ 2学期 ／ 3学期 #}
+<div class="term-select mb-3">
+    <span class="term-label">期間</span>
+    <div class="seg-tabs term-tabs">
+        {% for key, label in term_choices %}
+        <a href="{% url 'attendance:summary' %}?term={{ key }}" class="{% if term == key %}active{% endif %}">{{ label }}</a>
+        {% endfor %}
+    </div>
+</div>
+
+{% if not rows %}
+<!-- 担任のクラスに、まだ生徒を1人も登録していない -->
+<div class="alert alert-warning">生徒が登録されていません</div>
+{% elif days %}
+<div class="format-note mb-3" style="max-width: 860px;">
+    欠席が{{ alert_days }}日以上の生徒は <span class="text-danger fw-bold">赤色</span> で表示しています。
+</div>
+
+<div class="note-card" style="max-width: 860px;">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead class="table-light">
+                <tr><th class="ps-3 text-nowrap">番号</th><th>氏名</th><th class="text-end">出席</th><th class="text-end">欠席</th>
+                    <th class="text-end">遅刻</th><th class="text-end pe-3">早退</th></tr>
+            </thead>
+            <tbody>
+                {% for r in rows %}
+                <tr class="{% if r.absent >= alert_days %}att-row-alert{% endif %}">
+                    <td class="ps-3">{{ r.student.attendance_number }}</td>
+                    <td class="fw-bold">{{ r.student.name }}</td>
+                    <td class="text-end">{{ r.present }}日</td>
+                    <td class="text-end {% if r.absent >= alert_days %}text-danger fw-bold{% endif %}">{{ r.absent }}日</td>
+                    <td class="text-end">{{ r.late }}回</td>
+                    <td class="text-end pe-3">{{ r.early }}回</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+<p class="small text-muted mt-2">※ 授業日は、出欠を記録した日です。その日に記録のない生徒は欠席に数えます。</p>
+{% else %}
+<div class="note-card soon-card p-4 text-center text-muted" style="max-width: 860px;">
+    {% if not_started %}
+    {{ term_label }}はまだ始まっていません（{{ start|date:"n月" }}〜{{ end|date:"n月" }}）。
+    {% else %}
+    {{ term_label }}の出欠の記録がありません。
+    {% endif %}
+</div>
+{% endif %}
+
+{% endif %}
+
+{% endblock %}

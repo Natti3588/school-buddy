@@ -1,0 +1,6 @@
+{% with ep=request.resolver_match.view_name %}
+<div class="seg-tabs mb-3">
+    <a href="{% url 'attendance:today' %}" class="{% if ep == 'attendance:today' %}active{% endif %}">今日の出欠</a>
+    <a href="{% url 'attendance:summary' %}" class="{% if ep == 'attendance:summary' %}active{% endif %}">期間集計</a>
+</div>
+{% endwith %}

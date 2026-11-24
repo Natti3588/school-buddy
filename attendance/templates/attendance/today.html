@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+{% block title %}出欠管理 - {{ system_name }}{% endblock %}
+
+{% block content %}
+
+<div class="d-flex flex-wrap justify-content-between align-items-end mb-3 gap-2">
+    <div>
+        <h1 class="h3 fw-bold mb-1">出欠管理</h1>
+        {% if classroom %}
+        <!-- D は曜日の短い形（LANGUAGE_CODE が ja なので「月」「火」になる） -->
+        <p class="text-muted mb-0">{{ classroom }}　／　{% now "Y年n月j日（D）" %}　朝の出欠</p>
+        {% endif %}
+    </div>
+</div>
+
+{% if not classroom %}
+<!-- 今の年度のクラスで担任をしていない先生 -->
+<div class="alert alert-warning">担任するクラスがありません</div>
+{% else %}
+
+{% include "attendance/_tabs.html" %}
+
+{% if not rows %}
+<!-- 担任のクラスに、まだ生徒を1人も登録していない -->
+<div class="alert alert-warning">生徒が登録されていません</div>
+{% else %}
+
+{% if from_qr %}
+<div class="alert alert-success">
+    QRコードの結果を反映しました。読み取らなかった生徒は「欠席」、{{ times.late }}以降に読み取った生徒は「遅刻」になっています。理由を確認して保存してください。
+</div>
+{% endif %}
+
+{% if saved %}
+<div class="alert alert-success">今日の出欠を保存しました。</div>
+{% endif %}
+
+{% for message in messages %}
+<!-- 保存の前に QR コードを読んだ生徒がいたとき -->
+<div class="alert alert-info">{{ message }}</div>
+{% endfor %}
+
+{% if form.errors %}
+<div class="alert alert-danger">出席以外の生徒は、理由を選んでください。</div>
+{% endif %}
+
+<div class="row g-3">
+    <div class="col-xl-8">
+
+        <!-- 人数（選び直すと JS で数え直す） -->
+        <div class="att-count mb-3">
+            {% for value, label, count in counts %}
+            <div class="att-pill st-{{ forloop.counter }}"><span>{{ label }}</span><b data-count="{{ value }}">{{ count }}</b></div>
+            {% endfor %}
+        </div>
+
+        <form method="post" id="attForm">
+            {% csrf_token %}
+            <!-- 画面を開いた時刻（これより後に QR コードを読んだ生徒は、保存で書き換えない） -->
+            {{ form.loaded_at }}
+            <div class="note-card mb-3">
+                <div class="d-flex justify-content-between align-items-center gap-2 px-3 pt-3">
+                    <span class="small text-muted">はじめは全員「出席」になっています。違う生徒だけ変更してください。</span>
+                    <button type="button" class="btn btn-sm btn-outline-board text-nowrap" id="allPresent">全員出席にする</button>
+                </div>
+                <div class="table-responsive mt-2">
+                    <table class="table align-middle mb-0">
+                        <thead class="table-light"><tr><th class="ps-3 text-nowrap">番号</th><th>氏名</th><th>出欠</th><th class="pe-3">理由</th></tr></thead>
+                        <tbody>
+                            {% for row in rows %}
+                            {% with s=row.student status=row.status reason=row.reason %}
+                            <tr class="att-row {% if row.value != 'present' %}att-row-alert{% endif %}"
+                                data-no="{{ s.attendance_number }}" data-name="{{ s.name }}">
+                                <td class="ps-3">{{ s.attendance_number }}</td>
+                                <td class="fw-bold text-nowrap">{{ s.name }}</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm att-btns" role="group" aria-label="{{ s.name }}の出欠">
+                                        {% for value, label in status.field.choices %}
+                                        <input type="radio" class="btn-check" name="{{ status.html_name }}"
+                                               id="{{ status.auto_id }}_{{ forloop.counter }}" value="{{ value }}"
+                                               data-label="{{ label }}" {% if row.value == value %}checked{% endif %}>
+                                        <label class="btn btn-outline-board s{{ forloop.counter }}" for="{{ status.auto_id }}_{{ forloop.counter }}">{{ label }}</label>
+                                        {% endfor %}
+                                    </div>
+                                </td>
+                                <td class="pe-3" style="min-width: 150px;">
+                                    <!-- 理由は出席以外のときだけ表示する（JS で出し入れする） -->
+                                    <div class="att-reason" {% if row.value == 'present' %}hidden{% endif %}>
+                                        <select name="{{ reason.html_name }}" id="{{ reason.auto_id }}"
+                                                class="form-select form-select-sm {% if reason.errors %}is-invalid{% endif %}"
+                                                aria-label="{{ s.name }}の理由">
+                                            {% for value, label in reason.field.choices %}
+                                            <option value="{{ value }}" {% if reason.value == value %}selected{% endif %}>{{ label }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        {% for error in reason.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+                                    </div>
+                                    <span class="att-no-reason text-muted" {% if row.value != 'present' %}hidden{% endif %}>—</span>
+                                </td>
+                            </tr>
+                            {% endwith %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="d-flex justify-content-end mb-4">
+                <button type="submit" class="btn btn-board px-5">保存する</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- 右側：出席以外の生徒・QRコードで出席 -->
+    <div class="col-xl-4">
+        <div class="note-card p-3 mb-3">
+            <h2 class="h6 fw-bold mb-2">出席以外の生徒</h2>
+            <div id="notPresent">
+                {% for row in rows %}{% if row.value != 'present' %}
+                <div class="d-flex justify-content-between small py-1 border-bottom">
+                    <span>{{ row.student.attendance_number }}. {{ row.student.name }}</span>
+                    <span>{{ row.status_label }}{% if row.reason_label %}（{{ row.reason_label }}）{% endif %}</span>
+                </div>
+                {% endif %}{% endfor %}
+            </div>
+            <p class="small text-muted mb-0 mt-1" id="allPresentNote" {% if counts.0.2 != rows|length %}hidden{% endif %}>全員出席です</p>
+        </div>
+        <div class="note-card p-3 text-center">
+            <div class="fw-bold mb-1">QRコードで出席</div>
+            <div class="small text-muted mb-3">QRコードを教室のテレビや黒板に映し、生徒が自分のタブレットで読み取ります。</div>
+            <a href="{% url 'attendance:qr' %}" class="btn btn-board w-100">QRコードを表示</a>
+        </div>
+    </div>
+</div>
+
+<script>
+// 出欠を選び直したら、理由の表示・人数・「出席以外の生徒」をその場で更新する（保存は「保存する」）
+(function () {
+    const form = document.getElementById("attForm");
+    const rows = Array.from(form.querySelectorAll("tr.att-row"));
+    const list = document.getElementById("notPresent");
+
+    function refresh() {
+        const counts = {};
+        list.replaceChildren();
+        rows.forEach(tr => {
+            const checked = tr.querySelector("input.btn-check:checked");
+            const present = checked.value === "present";
+            counts[checked.value] = (counts[checked.value] || 0) + 1;
+            tr.classList.toggle("att-row-alert", !present);
+            tr.querySelector(".att-reason").hidden = present;
+            tr.querySelector(".att-no-reason").hidden = !present;
+            if (!present) {
+                const select = tr.querySelector("select");
+                const reason = select.value ? "（" + select.selectedOptions[0].text + "）" : "";
+                const line = document.createElement("div");
+                line.className = "d-flex justify-content-between small py-1 border-bottom";
+                const who = document.createElement("span");
+                who.textContent = tr.dataset.no + ". " + tr.dataset.name;
+                const what = document.createElement("span");
+                what.textContent = checked.dataset.label + reason;
+                line.append(who, what);
+                list.append(line);
+            }
+        });
+        document.querySelectorAll("[data-count]").forEach(b => b.textContent = counts[b.dataset.count] || 0);
+        document.getElementById("allPresentNote").hidden = list.children.length > 0;
+    }
+
+    form.addEventListener("change", refresh);
+    document.getElementById("allPresent").addEventListener("click", () => {
+        rows.forEach(tr => tr.querySelector("input.btn-check[value='present']").checked = true);
+        refresh();
+    });
+})();
+</script>
+
+{% endif %}
+{% endif %}
+
+{% endblock %}
