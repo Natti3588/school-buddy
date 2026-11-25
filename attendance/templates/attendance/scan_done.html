@@ -1,27 +1,63 @@
 {% extends "student/base.html" %}
-{% block title %}出席完了 - {{ system_name }}{% endblock %}
+{% block title %}出席 - {{ system_name }}{% endblock %}
+{% block heading %}出席{% endblock %}
 
 {% block content %}
-<div class="test-card text-center">
+<!-- QRコードを読み取ったあとの結果（自分の端末だけに出るので、遅刻もここでは表示してよい） -->
+<div class="test-card note-card p-4 p-md-5 text-center mx-auto" style="max-width: 560px;">
+    {% if ok %}
+    <div class="scan-icon {% if record.status == 'late' %}late{% else %}ok{% endif %}" aria-hidden="true">✓</div>
+    {% else %}
+    <div class="scan-icon ng" aria-hidden="true">!</div>
+    {% endif %}
 
-    <div class="done-mark {% if record.status == 'late' %}late{% endif %}" aria-hidden="true">✓</div>
-
+    {% if state == "done" %}
+    <h1 class="h3 fw-bold mb-2">出席を受け付けました</h1>
+    <p class="text-muted mb-4">今日も一日がんばりましょう。</p>
+    {% elif state == "late" %}
+    <h1 class="h3 fw-bold mb-2">出席を受け付けました</h1>
+    <p class="text-muted mb-4">{{ times.late }}を過ぎていたため「遅刻」になりました。理由があるときは担任の先生に伝えてください。</p>
+    {% elif state == "already" %}
+    <h1 class="h3 fw-bold mb-2">すでに受け付けています</h1>
     {% if record.scanned_at %}
-    <!-- QR コードで出席した -->
-    {% if record.status == "late" %}
-    <h1 class="h3 fw-bold mb-2">遅刻で記録しました</h1>
+    <p class="text-muted mb-4">同じ日に2回読み取る必要はありません。</p>
     {% else %}
-    <h1 class="h3 fw-bold mb-2">出席しました</h1>
+    <!-- QR コードを読む前に、先生が出欠の一覧で付けていた -->
+    <p class="text-muted mb-4">今日の出欠は、担任の先生が記録しています。</p>
     {% endif %}
-    <p class="mb-1">{% now "n月j日（D）" %}　{{ record.scanned_time }} に読み取りました</p>
-    {% else %}
-    <!-- 先生が出欠の一覧で付けた -->
-    <h1 class="h3 fw-bold mb-2">今日の出欠は記録されています</h1>
-    <p class="mb-1">{% now "n月j日（D）" %}　{{ record.get_status_display }}</p>
+    {% elif state == "expired" %}
+    <h1 class="h3 fw-bold mb-2">QRコードの有効期限が切れています</h1>
+    <p class="text-muted mb-4">QRコードは30秒ごとに変わります。先生の画面に出ている新しいQRコードを、もう一度読み取ってください。</p>
+    {% elif state == "invalid" %}
+    <h1 class="h3 fw-bold mb-2">無効なQRコードです。</h1>
+    <p class="text-muted mb-4">出席用のQRコードではありません。先生の画面に出ているQRコードを読み取ってください。</p>
+    {% elif state == "before" %}
+    <!-- UI にはない画面（QR コードは受付中しか出ないので、ふつうは起きない） -->
+    <h1 class="h3 fw-bold mb-2">出席の受付はまだ始まっていません</h1>
+    <p class="text-muted mb-4">受付は{{ times.open }}からです。時間になったら、もう一度読み取ってください。</p>
+    {% elif state == "closed" %}
+    <h1 class="h3 fw-bold mb-2">出席の受付は終了しました</h1>
+    <p class="text-muted mb-4">受付は{{ times.close }}までです。担任の先生に直接伝えてください。</p>
     {% endif %}
 
-    <p class="text-muted mb-4">{{ student.classroom }} {{ student.attendance_number }}番　{{ student.name }} さん</p>
+    {% if ok %}
+    <dl class="scan-detail text-start mb-4">
+        <dt>名前</dt><dd>{{ student.classroom }} {{ student.attendance_number }}番　{{ student.name }}</dd>
+        <!-- D は曜日の短い形（LANGUAGE_CODE が ja なので「月」「火」になる） -->
+        <dt>日付</dt><dd>{{ record.date|date:"Y年n月j日（D）" }}　朝の出席</dd>
+        <dt>読み取り時刻</dt><dd>{{ record.scanned_time|default:"—" }}</dd>
+        <dt>結果</dt>
+        <dd><span class="scan-status {% if record.status == 'present' %}done{% elif record.status == 'late' %}late{% endif %}">{{ record.get_status_display }}</span></dd>
+    </dl>
+    {% endif %}
 
-    <a href="{% url 'student_top' %}" class="btn btn-board px-5">ホームへ</a>
+    <div class="d-grid gap-2">
+        {% if retry %}
+        <a href="{% url 'attendance:scan' %}" class="btn btn-board btn-lg">もう一度読み取る</a>
+        <a href="{% url 'student_top' %}" class="btn btn-outline-secondary">ホームへ</a>
+        {% else %}
+        <a href="{% url 'student_top' %}" class="btn btn-board btn-lg">ホームへ</a>
+        {% endif %}
+    </div>
 </div>
 {% endblock %}

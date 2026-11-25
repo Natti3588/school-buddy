@@ -10,8 +10,8 @@
 
     <p class="mb-3">黒板やテレビに映っている<span class="fw-bold">QRコード</span>を、カメラで読み取ってください。</p>
 
-    <!-- サーバーで確かめて出席にできなかったとき（古い QR コード・ほかのクラス・受付時間外） -->
-    <div class="alert alert-danger text-start" id="scanError" role="alert" {% if not error %}hidden{% endif %}>{{ error }}</div>
+    <!-- カメラを使えないとき（読み取った結果は、結果画面に出す） -->
+    <div class="alert alert-danger text-start" id="scanError" role="alert" hidden></div>
 
     <!-- カメラの映像（html5-qrcode がこの中に表示する） -->
     <div id="reader" class="scan-reader mx-auto"></div>
@@ -43,14 +43,15 @@
         return;
     }
 
-    // QR コードの中身は「…/attendance/scan/?t=トークン」。出欠管理の QR コードかどうかを確かめてトークンを取り出す
+    // QR コードの中身は「…/attendance/scan/?t=トークン」。トークンを取り出す
+    // 出欠管理の QR コードでなければ空にする（サーバーが「無効なQRコード」の結果画面を出す）
     function tokenOf(text) {
         try {
             const url = new URL(text);
-            if (url.pathname !== SCAN_PATH) return null;
-            return url.searchParams.get("t");
+            if (url.pathname !== SCAN_PATH) return "";
+            return url.searchParams.get("t") || "";
         } catch (e) {
-            return null;   // URL でない QR コード
+            return "";   // URL でない QR コード
         }
     }
 
@@ -59,14 +60,9 @@
 
     function onScan(text) {
         if (sending) return;
-        const token = tokenOf(text);
-        if (!token) {
-            showError("出席用のQRコードではありません");
-            return;   // 読み取りは続ける
-        }
         sending = true;
         status.textContent = "送信しています…";
-        document.getElementById("token").value = token;
+        document.getElementById("token").value = tokenOf(text);
         // カメラを止めてから送る（止められなくても送る）
         scanner.stop().catch(() => {}).finally(() => document.getElementById("scanForm").submit());
     }

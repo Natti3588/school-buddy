@@ -884,11 +884,19 @@ a.home-tile:hover { border-color: var(--board); transform: translateY(-2px); col
     background: #2b2f2c; border-radius: 12px; overflow: hidden;
 }
 .scan-reader video { display: block; width: 100%; }
-/* 出席完了の印 */
-.done-mark {
-    width: 88px; height: 88px; margin: 0 auto 16px;
+/* 結果画面（UI の attendance_done に合わせる） */
+.scan-icon {
+    width: 76px; height: 76px; margin: 0 auto 12px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    border-radius: 50%; background: #3b9b5f; color: #fff;
-    font-size: 3rem; font-weight: bold; line-height: 1;
+    font-size: 2.4rem; font-weight: bold; color: #fff;
 }
-.done-mark.late { background: #e0b020; }
+.scan-icon.ok   { background: #3b9b5f; }
+.scan-icon.late { background: #e0b020; }
+.scan-icon.ng   { background: #d2475b; }
+.scan-detail { display: grid; grid-template-columns: 7em 1fr; gap: 6px 12px; padding: 14px 18px;
+               background: #f6f4ef; border-radius: 8px; }
+.scan-detail dt { color: var(--muted); font-weight: normal; }
+.scan-detail dd { margin: 0; font-weight: bold; }
+.scan-status { display: inline-block; padding: 1px 10px; border-radius: 4px; }
+.scan-status.done { background: #e8f5ec; color: #1f6b3a; }
+.scan-status.late { background: #fff6d8; color: #7a5c00; }

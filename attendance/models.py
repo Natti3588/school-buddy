@@ -146,11 +146,24 @@ def make_token(classroom):
     return signing.dumps({"c": classroom.pk, "d": timezone.localdate().isoformat()}, salt=TOKEN_SALT)
 
 
+class ScanResult(models.TextChoices):
+    """QR コードを読んだあとの結果画面の種類"""
+
+    DONE = "done", "出席"
+    LATE = "late", "遅刻"
+    ALREADY = "already", "読み取り済み"
+    EXPIRED = "expired", "有効期限切れ"
+    INVALID = "invalid", "無効なQRコード"
+    BEFORE = "before", "受付前"
+    CLOSED = "closed", "受付終了"
+
+
 class ScanError(Exception):
-    """QR コードで出席できなかった理由（生徒の画面にそのまま出す）"""
+    """QR コードで出席できなかったとき。result は結果画面の種類（ScanResult）"""
 
-
-OLD_QR_MESSAGE = "QRコードが古くなっています。画面に映っているQRコードをもう一度読み取ってください"
+    def __init__(self, result):
+        super().__init__(result)
+        self.result = result
 
 
 def record_scan(student, token):
@@ -161,21 +174,25 @@ def record_scan(student, token):
     try:
         data = signing.loads(token, salt=TOKEN_SALT, max_age=TOKEN_MAX_AGE)
     except signing.SignatureExpired:
-        raise ScanError(OLD_QR_MESSAGE)
+        raise ScanError(ScanResult.EXPIRED)
     except signing.BadSignature:
-        raise ScanError("出席用のQRコードではありません")
+        # 出欠管理の QR コードではない（ほかの QR コード・書き換えたトークンなど）
+        raise ScanError(ScanResult.INVALID)
 
     now = timezone.localtime()
     today = now.date()
+    # 前の日の QR コード（写真など）は、期限切れとして扱う
     if data.get("d") != today.isoformat():
-        raise ScanError(OLD_QR_MESSAGE)
+        raise ScanError(ScanResult.EXPIRED)
+    # ほかのクラスの QR コードは、自分のクラスでは無効
     if data.get("c") != student.classroom_id:
-        raise ScanError("ほかのクラスのQRコードです。自分のクラスのQRコードを読み取ってください")
+        raise ScanError(ScanResult.INVALID)
 
     phase = reception_phase(now)
-    if phase in (Phase.BEFORE, Phase.CLOSED):
-        times = reception_times_text()
-        raise ScanError(f"出席の受付時間ではありません（{times['open']}〜{times['close']}）")
+    if phase == Phase.BEFORE:
+        raise ScanError(ScanResult.BEFORE)
+    if phase == Phase.CLOSED:
+        raise ScanError(ScanResult.CLOSED)
     status = Status.PRESENT if phase == Phase.OPEN else Status.LATE
 
     with transaction.atomic():
