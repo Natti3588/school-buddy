@@ -16,6 +16,7 @@ from .models import (
     TERM_CHOICES,
     Reason,
     ScanError,
+    ScanResult,
     Status,
     record_scan,
     reception_times_text,
@@ -156,6 +157,16 @@ class AttendanceSummaryView(RoleRequiredMixin, TemplateView):
         return context
 
 
+def scan_result_url(result):
+    """結果画面の URL（結果の種類を ?state= で渡す）"""
+    return reverse("attendance:scan_done") + f"?state={result}"
+
+
+def has_attended(record):
+    # 欠席の記録は「まだ出席していない」と同じに扱う（読み取れば出席になる）
+    return record is not None and record.status != Status.ABSENT
+
+
 class ScanView(RoleRequiredMixin, View):
     """生徒：QR コードを読み取って出席する"""
 
@@ -163,48 +174,62 @@ class ScanView(RoleRequiredMixin, View):
     template_name = "attendance/scan.html"
 
     def get(self, request):
-        record = todays_record(request.user.student)
-        # 今日もう出席している生徒には、出席完了の画面を見せる
-        if record is not None and record.status != Status.ABSENT:
-            return redirect("attendance:scan_done")
-        return self.render()
+        # 今日もう出席している生徒には、「すでに受け付けています」を見せる
+        if has_attended(todays_record(request.user.student)):
+            return redirect(scan_result_url(ScanResult.ALREADY))
+        context = {"student": request.user.student, "times": reception_times_text()}
+        return render(request, self.template_name, context)
 
     def post(self, request):
         student = request.user.student
         try:
             record, changed = record_scan(student, request.POST.get("token", ""))
         except ScanError as e:
-            # 読み取り画面に理由を出して、もう一度読めるようにする
-            return self.render(error=str(e), status=400)
-        if changed:
-            notify(student.classroom_id, [record])
-        # 再読み込みでもう一度送らないように、出席完了の画面へはリダイレクトで移る
-        return redirect("attendance:scan_done")
-
-    def render(self, error="", status=200):
-        context = {
-            "student": self.request.user.student,
-            "error": error,
-            "times": reception_times_text(),
-        }
-        return render(self.request, self.template_name, context, status=status)
+            # 期限切れ・無効な QR コード・受付時間外は、それぞれの結果画面へ
+            return redirect(scan_result_url(e.result))
+        if not changed:
+            # 出席・遅刻・早退の記録がもうある（2回目の読み取りや、先生が先に付けた）
+            return redirect(scan_result_url(ScanResult.ALREADY))
+        notify(student.classroom_id, [record])
+        # 再読み込みでもう一度送らないように、結果画面へはリダイレクトで移る
+        result = ScanResult.LATE if record.status == Status.LATE else ScanResult.DONE
+        return redirect(scan_result_url(result))
 
 
 class ScanDoneView(RoleRequiredMixin, TemplateView):
-    """生徒：出席完了"""
+    """生徒：QR コードを読み取ったあとの結果（?state= で表示を切り替える）"""
 
     allowed_roles = [Role.STUDENT]
     template_name = "attendance/scan_done.html"
+    # 出席を受け付けた結果（今日の記録を表示する）
+    OK_RESULTS = {ScanResult.DONE, ScanResult.LATE, ScanResult.ALREADY}
+    # もう一度読み取れば出席できるかもしれない結果（「もう一度読み取る」ボタンを出す）
+    RETRY_RESULTS = {ScanResult.EXPIRED, ScanResult.INVALID, ScanResult.BEFORE}
 
     def get(self, request, *args, **kwargs):
         self.record = todays_record(request.user.student)
-        # まだ出席していないときは、読み取り画面に戻す
-        if self.record is None or self.record.status == Status.ABSENT:
-            return redirect("attendance:scan")
+        result = request.GET.get("state", "")
+        if result not in ScanResult.values:
+            result = ScanResult.ALREADY
+        if result in self.OK_RESULTS:
+            # URL の state を書き換えても、記録がないのに「受け付けました」とは出さない
+            if not has_attended(self.record):
+                return redirect("attendance:scan")
+            # 表示は今日の記録に合わせる（遅刻なのに done と書き換えられても「遅刻」と出す）
+            if result != ScanResult.ALREADY:
+                result = ScanResult.LATE if self.record.status == Status.LATE else ScanResult.DONE
+        self.result = result
         return super().get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["student"] = self.request.user.student
-        context["record"] = self.record
+        context.update({
+            "student": self.request.user.student,
+            "state": self.result,
+            "ok": self.result in self.OK_RESULTS,
+            "retry": self.result in self.RETRY_RESULTS,
+            "times": reception_times_text(),
+        })
+        if context["ok"]:
+            context["record"] = self.record
         return context

@@ -33,17 +33,21 @@
             </div>
         </div>
 
-        <!-- 出席する（QR コードの読み取り画面へ。今日もう出席していれば出席完了の画面が開く） -->
+        <!-- 出席する：カメラで先生の画面の QR コードを読み取る。今日もう出席していれば、結果（すでに受け付けています）を開く -->
         <div class="col-md-6">
+            {% if today_attendance and today_attendance.status != "absent" %}
+            <a href="{% url 'attendance:scan_done' %}?state=already" class="home-tile tile-attend">
+                <span class="tile-icon" aria-hidden="true">✓</span>
+                <span class="tile-name">出席する</span>
+                <span class="tile-status">{{ today_attendance.get_status_display }}済み{% if today_attendance.scanned_at %}（{{ today_attendance.scanned_time }}）{% endif %}</span>
+            </a>
+            {% else %}
             <a href="{% url 'attendance:scan' %}" class="home-tile tile-attend">
                 <span class="tile-icon" aria-hidden="true">▣</span>
                 <span class="tile-name">出席する</span>
-                {% if today_attendance and today_attendance.status != "absent" %}
-                <span class="tile-status">今日は{{ today_attendance.get_status_display }}{% if today_attendance.scanned_at %}（{{ today_attendance.scanned_time }}）{% endif %}</span>
-                {% else %}
-                <span class="tile-status muted">QRコードを読み取って出席</span>
-                {% endif %}
+                <span class="tile-status muted">先生の画面のQRコードを読み取ります</span>
             </a>
+            {% endif %}
         </div>
     </div>
 
