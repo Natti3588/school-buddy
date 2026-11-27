@@ -9,8 +9,7 @@
         <p class="text-muted mb-0">教員のアカウントとクラスを管理します。</p>
     </div>
     <div class="d-flex flex-wrap gap-2">
-        <!-- TODO: 教員アカウント追加の画面を作ったらリンクを差し替える -->
-        <a href="#" class="btn btn-board">＋ 教員を追加</a>
+        <a href="{% url 'teachers:new' %}" class="btn btn-board">＋ 教員を追加</a>
         <a href="{% url 'classrooms:new' %}" class="btn btn-outline-board">＋ クラス登録</a>
     </div>
 </div>
@@ -21,7 +20,7 @@
         <div class="note-card summary-card bt-teacher p-3 h-100">
             <div class="text-muted small">教員アカウント</div>
             <div class="number my-1">{{ teacher_count }}<small class="fs-6 text-muted"> 人</small></div>
-            <a href="#" class="btn btn-sm btn-outline-board mt-1">教員アカウント管理 ›</a>
+            <a href="{% url 'teachers:list' %}" class="btn btn-sm btn-outline-board mt-1">教員アカウント管理 ›</a>
         </div>
     </div>
     <div class="col-sm-6 col-xl-4">
