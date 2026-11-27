@@ -28,6 +28,15 @@ def is_student_id_taken(student_id):
     )
 
 
+def issue_login_id():
+    """まだ使われていないログインIDを1つ作る（生徒ID・教員・学校管理者で共通）"""
+    # 32文字×8桁で約1兆通りあるが、万一の重複に備えて使われていないものを選ぶ
+    login_id = generate_student_id()
+    while is_student_id_taken(login_id):
+        login_id = generate_student_id()
+    return login_id
+
+
 def current_school_year():
     # 年度は4月始まり（1〜3月は前の年の年度）
     today = timezone.localdate()
@@ -152,11 +161,7 @@ class Student(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.student_id:
-            # 32文字×8桁で約1兆通りあるが、万一の重複に備えて使われていないものを選ぶ
-            student_id = generate_student_id()
-            while is_student_id_taken(student_id):
-                student_id = generate_student_id()
-            self.student_id = student_id
+            self.student_id = issue_login_id()
         # 生徒とログイン情報は、どちらか片方だけ保存されることがないように一緒に保存する
         with transaction.atomic():
             if self.user_id is None:
