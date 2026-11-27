@@ -12,10 +12,10 @@ class UserAdmin(BaseUserAdmin):
     search_fields = ("user_id", "name", "school__name")
     ordering = ("user_id",)
     fieldsets = (
-        (None, {"fields": ("user_id", "name", "role", "school", "password", "must_change_password")}),
+        (None, {"fields": ("user_id", "name", "furigana", "email", "role", "school", "password", "must_change_password")}),
         ("権限", {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")}),
         ("日時", {"fields": ("last_login",)}),
     )
     add_fieldsets = (
-        (None, {"classes": ("wide",), "fields": ("user_id", "name", "role", "school", "password1", "password2")}),
+        (None, {"classes": ("wide",), "fields": ("user_id", "name", "furigana", "email", "role", "school", "password1", "password2")}),
     )

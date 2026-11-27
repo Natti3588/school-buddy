@@ -50,6 +50,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     user_id = models.CharField("ユーザーID", max_length=150, unique=True)
     # 生徒の名前は students.Student に持つので、生徒は空にする
     name = models.CharField("名前", max_length=100, blank=True)
+    # 教員のふりがな（教員登録で入力する）。学校管理者と生徒は空
+    furigana = models.CharField("ふりがな", max_length=100, blank=True)
+    # 学校管理者の連絡用（学校登録で入力する）。ログインには使わない
+    email = models.EmailField("メールアドレス", blank=True)
     role = models.CharField("種類", max_length=20, choices=Role.choices, default=Role.TEACHER)
     # 学校を削除すると、所属する教員も一緒に削除される
     # 管理者はどの学校にも所属しないので空にする

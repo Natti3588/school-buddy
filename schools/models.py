@@ -1,12 +1,21 @@
 from django.db import models, transaction
 
 
+class SchoolType(models.TextChoices):
+    JUNIOR_HIGH = "junior_high", "中学校"
+    HIGH = "high", "高校"
+
+
 class School(models.Model):
     # 登録したときにバックエンドが自動で付ける（例：SC0001）。画面からは入力・変更させない
     # 付けるのは保存の直後なので、一瞬だけ空（NULL）になる。
     # 空文字にすると unique で2校目以降がぶつかるので、null=True にしている
     code = models.CharField("学校コード", max_length=10, unique=True, null=True, editable=False)
     name = models.CharField("学校名", max_length=100, unique=True)
+    # 学校登録の画面では最初は何も選ばせない。default は、この項目を足す前からある学校のため
+    school_type = models.CharField(
+        "学校種別", max_length=20, choices=SchoolType.choices, default=SchoolType.JUNIOR_HIGH
+    )
     address = models.CharField("所在地", max_length=200)
     registered_at = models.DateTimeField("登録日", auto_now_add=True)
 
