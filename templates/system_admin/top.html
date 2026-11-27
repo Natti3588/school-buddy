@@ -8,8 +8,7 @@
         <h1 class="h3 fw-bold mb-1">管理者ホーム</h1>
         <p class="text-muted mb-0">放課GOを利用している学校を管理します。</p>
     </div>
-    <!-- TODO: 学校登録・学校一覧の画面を作ったらリンクを差し替える -->
-    <a href="#" class="btn btn-board">＋ 学校登録</a>
+    <a href="{% url 'schools:new' %}" class="btn btn-board">＋ 学校登録</a>
 </div>
 
 <div class="row g-3 mb-4">
@@ -17,6 +16,7 @@
         <div class="note-card summary-card bt-class p-3 h-100">
             <div class="text-muted small">利用中の学校</div>
             <div class="number my-1">{{ school_count }}<small class="fs-6 text-muted"> 校</small></div>
+            <!-- TODO: 学校一覧の画面を作ったらリンクを差し替える -->
             <a href="#" class="btn btn-sm btn-outline-board mt-1">学校一覧 ›</a>
         </div>
     </div>
@@ -24,7 +24,7 @@
         <div class="note-card summary-card bt-teacher p-3 h-100">
             <div class="text-muted small">今月の新規登録</div>
             <div class="number my-1">{{ new_school_count }}<small class="fs-6 text-muted"> 校</small></div>
-            <a href="#" class="btn btn-sm btn-outline-board mt-1">学校登録 ›</a>
+            <a href="{% url 'schools:new' %}" class="btn btn-sm btn-outline-board mt-1">学校登録 ›</a>
         </div>
     </div>
 </div>

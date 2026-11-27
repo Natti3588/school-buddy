@@ -1,0 +1,31 @@
+{% extends "system_admin/base.html" %}
+{% block title %}学校登録の確認 - {{ system_name }}{% endblock %}
+
+{% block content %}
+
+<h1 class="h3 fw-bold mb-3">学校登録</h1>
+{% include "students/_steps.html" with step=2 %}
+
+<div class="note-card form-card p-4">
+    <h2 class="h5 fw-bold mb-1">この内容で登録しますか？</h2>
+    <p class="text-muted small mb-3">間違いがある場合は「修正する」を押してください。</p>
+
+    <table class="table confirm-table mb-4">
+        <tbody>
+            <tr><th>学校名</th><td>{{ s.name }}</td></tr>
+            <tr><th>学校種別</th><td>{{ s.school_type_label }}</td></tr>
+            <tr><th>所在地</th><td>{{ s.address }}</td></tr>
+            <tr><th>学校管理者</th><td>{{ s.admin_name }}</td></tr>
+            <tr><th>学校管理者メールアドレス</th><td>{{ s.admin_email }}</td></tr>
+        </tbody>
+    </table>
+
+    <form method="post" action="{% url 'schools:confirm' %}" class="d-flex flex-wrap justify-content-between gap-2">
+        {% csrf_token %}
+        <!-- 入力済みの値を残したまま入力画面に戻る -->
+        <a href="{% url 'schools:new' %}?edit=1" class="btn btn-outline-board px-4">‹ 修正する</a>
+        <button type="submit" class="btn btn-board px-4">登録する</button>
+    </form>
+</div>
+
+{% endblock %}
