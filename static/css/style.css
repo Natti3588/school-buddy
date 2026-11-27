@@ -831,7 +831,7 @@ a.home-tile:hover { border-color: var(--board); transform: translateY(-2px); col
 .qr-rules { max-width: 340px; margin-left: auto; margin-right: auto; padding-left: 1.1em; line-height: 1.6; }
 
 /* 人数 */
-.qr-counts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.qr-counts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 .qr-count {
     display: flex; justify-content: space-between; align-items: baseline;
     border: 1px solid #e2dccd; border-radius: 8px; padding: 4px 10px; background: #fff;
@@ -839,7 +839,6 @@ a.home-tile:hover { border-color: var(--board); transform: translateY(-2px); col
 .qr-count span { color: var(--muted); font-size: .8rem; }
 .qr-count b { font-size: 1.3rem; }
 .qr-count.st-done   { border-top: 4px solid #3b9b5f; }
-.qr-count.st-late   { border-top: 4px solid #e0b020; }
 .qr-count.st-wait   { border-top: 4px solid #c9c1ae; }
 .qr-count.st-absent { border-top: 4px solid #d2475b; }
 
@@ -874,7 +873,6 @@ a.home-tile:hover { border-color: var(--board); transform: translateY(-2px); col
 
 @media (max-width: 575.98px) {
     .qr-list { columns: 1; }
-    .qr-counts { grid-template-columns: repeat(2, 1fr); }
 }
 
 /* ---------- 生徒：QRコードで出席 ---------- */

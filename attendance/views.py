@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib import messages
 from django.http import Http404
 from django.shortcuts import redirect, render
@@ -19,7 +20,6 @@ from .models import (
     ScanResult,
     Status,
     record_scan,
-    reception_times_text,
     save_daily,
     summarize,
     term_range,
@@ -81,7 +81,6 @@ class AttendanceTodayView(RoleRequiredMixin, View):
         context = {
             "classroom": classroom,
             "form": form,
-            "times": reception_times_text(),
             "saved": self.request.GET.get("saved") == "1",
             "from_qr": self.request.GET.get("qr") == "1",
         }
@@ -116,8 +115,9 @@ class AttendanceQrView(RoleRequiredMixin, TemplateView):
             context["students"] = classroom.students.order_by("attendance_number")
             # 画面を開いた時点の出欠（そのあとの変化は WebSocket で届く）
             context["items"] = [r.to_item() for r in todays_records(classroom).values()]
-            context["times"] = reception_times_text()
             context["scan_path"] = reverse("attendance:scan")
+            # この分数がたったら、画面が自分で出欠管理に戻る
+            context["qr_minutes"] = settings.ATTENDANCE_QR_MINUTES
         return context
 
 
@@ -177,7 +177,7 @@ class ScanView(RoleRequiredMixin, View):
         # 今日もう出席している生徒には、「すでに受け付けています」を見せる
         if has_attended(todays_record(request.user.student)):
             return redirect(scan_result_url(ScanResult.ALREADY))
-        context = {"student": request.user.student, "times": reception_times_text()}
+        context = {"student": request.user.student}
         return render(request, self.template_name, context)
 
     def post(self, request):
@@ -185,15 +185,14 @@ class ScanView(RoleRequiredMixin, View):
         try:
             record, changed = record_scan(student, request.POST.get("token", ""))
         except ScanError as e:
-            # 期限切れ・無効な QR コード・受付時間外は、それぞれの結果画面へ
+            # 期限切れ・無効な QR コードは、それぞれの結果画面へ
             return redirect(scan_result_url(e.result))
         if not changed:
             # 出席・遅刻・早退の記録がもうある（2回目の読み取りや、先生が先に付けた）
             return redirect(scan_result_url(ScanResult.ALREADY))
         notify(student.classroom_id, [record])
         # 再読み込みでもう一度送らないように、結果画面へはリダイレクトで移る
-        result = ScanResult.LATE if record.status == Status.LATE else ScanResult.DONE
-        return redirect(scan_result_url(result))
+        return redirect(scan_result_url(ScanResult.DONE))
 
 
 class ScanDoneView(RoleRequiredMixin, TemplateView):
@@ -202,9 +201,9 @@ class ScanDoneView(RoleRequiredMixin, TemplateView):
     allowed_roles = [Role.STUDENT]
     template_name = "attendance/scan_done.html"
     # 出席を受け付けた結果（今日の記録を表示する）
-    OK_RESULTS = {ScanResult.DONE, ScanResult.LATE, ScanResult.ALREADY}
+    OK_RESULTS = {ScanResult.DONE, ScanResult.ALREADY}
     # もう一度読み取れば出席できるかもしれない結果（「もう一度読み取る」ボタンを出す）
-    RETRY_RESULTS = {ScanResult.EXPIRED, ScanResult.INVALID, ScanResult.BEFORE}
+    RETRY_RESULTS = {ScanResult.EXPIRED, ScanResult.INVALID}
 
     def get(self, request, *args, **kwargs):
         self.record = todays_record(request.user.student)
@@ -215,9 +214,9 @@ class ScanDoneView(RoleRequiredMixin, TemplateView):
             # URL の state を書き換えても、記録がないのに「受け付けました」とは出さない
             if not has_attended(self.record):
                 return redirect("attendance:scan")
-            # 表示は今日の記録に合わせる（遅刻なのに done と書き換えられても「遅刻」と出す）
-            if result != ScanResult.ALREADY:
-                result = ScanResult.LATE if self.record.status == Status.LATE else ScanResult.DONE
+            # 先生が遅刻・早退を付けている日は、done と書き換えられても「すでに受け付けています」と出す
+            if self.record.status != Status.PRESENT:
+                result = ScanResult.ALREADY
         self.result = result
         return super().get(request, *args, **kwargs)
 
@@ -228,7 +227,6 @@ class ScanDoneView(RoleRequiredMixin, TemplateView):
             "state": self.result,
             "ok": self.result in self.OK_RESULTS,
             "retry": self.result in self.RETRY_RESULTS,
-            "times": reception_times_text(),
         })
         if context["ok"]:
             context["record"] = self.record
