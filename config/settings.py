@@ -92,11 +92,9 @@ CHANNEL_LAYERS = {
     "default": {"BACKEND": "channels.layers.InMemoryChannelLayer"},
 }
 
-# 出欠管理：QR コードで出席できる時刻（"時:分"）
-# この時刻より前に読むと出席、LATE〜CLOSE は遅刻、CLOSE で受付終了。昼間に試すときは環境変数で変える
-ATTENDANCE_OPEN = os.environ.get("ATTENDANCE_OPEN", "8:25")
-ATTENDANCE_LATE = os.environ.get("ATTENDANCE_LATE", "8:40")
-ATTENDANCE_CLOSE = os.environ.get("ATTENDANCE_CLOSE", "8:50")
+# 出欠管理：QR コードの画面を開いてから受付を終えるまでの分数
+# この間に読み取った生徒は「出席」。時間がたつと QR コードが止まり、画面は出欠管理に戻る
+ATTENDANCE_QR_MINUTES = int(os.environ.get("ATTENDANCE_QR_MINUTES", "40"))
 
 
 # Database

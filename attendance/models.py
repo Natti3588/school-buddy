@@ -1,7 +1,6 @@
 import calendar
 import datetime
 
-from django.conf import settings
 from django.core import signing
 from django.db import models, transaction
 from django.db.models import Count, Q
@@ -40,7 +39,7 @@ class Attendance(models.Model):
     )
     date = models.DateField("日付")
     status = models.CharField("状態", max_length=20, choices=Status.choices)
-    # QR コードで付いた遅刻や、受付終了後の欠席は、先生が保存するまで理由が空になる
+    # QR 画面のあとで「欠席」になった生徒は、先生が保存するまで理由が空になる
     reason = models.CharField("理由", max_length=20, choices=Reason.choices, blank=True)
     # 先生が一覧で付けた記録では空
     scanned_at = models.DateTimeField("QRコードで読んだ時刻", null=True, blank=True)
@@ -82,55 +81,6 @@ def format_hm(t):
     return f"{t.hour}:{t.minute:02d}"
 
 
-# ---------- 受付の時刻 ----------
-
-class Phase(models.TextChoices):
-    BEFORE = "before", "受付前"
-    OPEN = "open", "受付中"
-    LATE = "late", "遅刻の時間"
-    CLOSED = "closed", "受付終了"
-
-
-def _parse_hm(text):
-    hour, minute = text.split(":")
-    return datetime.time(int(hour), int(minute))
-
-
-def reception_times():
-    """QR コードの受付の時刻（settings の ATTENDANCE_OPEN / LATE / CLOSE）"""
-    return {
-        "open": _parse_hm(settings.ATTENDANCE_OPEN),
-        "late": _parse_hm(settings.ATTENDANCE_LATE),
-        "close": _parse_hm(settings.ATTENDANCE_CLOSE),
-    }
-
-
-def reception_times_text():
-    """画面に出す「8:25」などの文字"""
-    return {key: format_hm(t) for key, t in reception_times().items()}
-
-
-def reception_phase(now):
-    times = reception_times()
-    t = now.time()
-    if t < times["open"]:
-        return Phase.BEFORE
-    if t < times["late"]:
-        return Phase.OPEN
-    if t < times["close"]:
-        return Phase.LATE
-    return Phase.CLOSED
-
-
-def seconds_until_next_phase(now):
-    """次に受付の状態が変わるまでの秒数（受付終了のあとは None）"""
-    for t in reception_times().values():
-        boundary = now.replace(hour=t.hour, minute=t.minute, second=0, microsecond=0)
-        if boundary > now:
-            return (boundary - now).total_seconds()
-    return None
-
-
 # ---------- QR コードのトークン ----------
 
 # 新しいトークンを出す間隔と、トークンを受け付ける時間（秒）
@@ -150,12 +100,9 @@ class ScanResult(models.TextChoices):
     """QR コードを読んだあとの結果画面の種類"""
 
     DONE = "done", "出席"
-    LATE = "late", "遅刻"
     ALREADY = "already", "読み取り済み"
     EXPIRED = "expired", "有効期限切れ"
     INVALID = "invalid", "無効なQRコード"
-    BEFORE = "before", "受付前"
-    CLOSED = "closed", "受付終了"
 
 
 class ScanError(Exception):
@@ -167,7 +114,10 @@ class ScanError(Exception):
 
 
 def record_scan(student, token):
-    """QR コードを読んだ生徒を出席（遅刻の時間なら遅刻）にする
+    """QR コードを読んだ生徒を出席にする
+
+    QR コードは先生が QR 画面を開いている間（ATTENDANCE_QR_MINUTES 分）しか出ないので、
+    読み取れた生徒はすべて「出席」にする。あとから来た生徒の遅刻・欠席は、先生が出欠の一覧で付ける。
 
     戻り値は (今日の Attendance, 記録を変えたか)。出席できないときは ScanError を出す。
     """
@@ -188,22 +138,15 @@ def record_scan(student, token):
     if data.get("c") != student.classroom_id:
         raise ScanError(ScanResult.INVALID)
 
-    phase = reception_phase(now)
-    if phase == Phase.BEFORE:
-        raise ScanError(ScanResult.BEFORE)
-    if phase == Phase.CLOSED:
-        raise ScanError(ScanResult.CLOSED)
-    status = Status.PRESENT if phase == Phase.OPEN else Status.LATE
-
     with transaction.atomic():
         record, created = Attendance.objects.get_or_create(
-            student=student, date=today, defaults={"status": status, "scanned_at": now}
+            student=student, date=today, defaults={"status": Status.PRESENT, "scanned_at": now}
         )
         if created:
             return record, True
         # 先生が欠席にしたあとで来た生徒は、読み取った時刻で付け直す
         if record.status == Status.ABSENT:
-            record.status = status
+            record.status = Status.PRESENT
             record.reason = ""
             record.scanned_at = now
             record.save()

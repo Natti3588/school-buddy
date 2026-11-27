@@ -2,18 +2,12 @@ import asyncio
 
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
-from django.utils import timezone
+from django.conf import settings
 
 from accounts.models import Role
 from students.models import homeroom_classroom
 
-from .models import (
-    TOKEN_INTERVAL,
-    Phase,
-    make_token,
-    reception_phase,
-    seconds_until_next_phase,
-)
+from .models import TOKEN_INTERVAL, make_token
 from .realtime import group_name
 
 
@@ -46,21 +40,19 @@ class AttendanceConsumer(AsyncJsonWebsocketConsumer):
             await self.channel_layer.group_discard(self.group, self.channel_name)
 
     async def send_tokens(self):
-        """受付の状態を送り、受付中は30秒ごとに新しいトークンを送る"""
-        while True:
-            now = timezone.localtime()
-            phase = reception_phase(now)
-            until_next = seconds_until_next_phase(now)
-            if phase == Phase.CLOSED:
-                await self.send_json({"type": "phase", "phase": phase})
-                return
-            # 8:40 などの切り替えの時刻には、30秒たっていなくても送り直す
-            wait = min(TOKEN_INTERVAL, until_next)
-            message = {"type": "phase", "phase": phase, "seconds": round(wait)}
-            if phase != Phase.BEFORE:
-                message["token"] = make_token(self.classroom)
-            await self.send_json(message)
+        """つないでから ATTENDANCE_QR_MINUTES 分の間、30秒ごとに新しいトークンを送る
+
+        時間がたったら「受付終了」を送り、トークンを出すのをやめる。
+        画面の方も同じ分数で出欠管理に戻るが、画面が戻らなくても QR コードはここで止まる。
+        """
+        loop = asyncio.get_running_loop()
+        end = loop.time() + settings.ATTENDANCE_QR_MINUTES * 60
+        while (left := end - loop.time()) > 0:
+            # 最後の1回は、残りの秒数だけ待つ
+            wait = min(TOKEN_INTERVAL, left)
+            await self.send_json({"type": "token", "token": make_token(self.classroom), "seconds": round(wait)})
             await asyncio.sleep(wait)
+        await self.send_json({"type": "closed"})
 
     async def attendance_status(self, event):
         # realtime.notify() がグループに送ったものを、そのまま画面に渡す

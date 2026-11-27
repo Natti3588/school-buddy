@@ -17,8 +17,6 @@
     <div id="reader" class="scan-reader mx-auto"></div>
     <p class="small text-muted mt-2 mb-0" id="scanStatus">カメラを準備しています…</p>
 
-    <p class="small text-muted mt-3 mb-0">受付：{{ times.open }}〜{{ times.close }}（{{ times.late }}からは遅刻になります）</p>
-
     <!-- 読み取ったトークンを送るフォーム（CSRF つきの POST） -->
     <form method="post" id="scanForm">
         {% csrf_token %}

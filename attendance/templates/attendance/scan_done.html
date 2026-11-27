@@ -3,7 +3,7 @@
 {% block heading %}出席{% endblock %}
 
 {% block content %}
-<!-- QRコードを読み取ったあとの結果（自分の端末だけに出るので、遅刻もここでは表示してよい） -->
+<!-- QRコードを読み取ったあとの結果（自分の端末だけに出る） -->
 <div class="test-card note-card p-4 p-md-5 text-center mx-auto" style="max-width: 560px;">
     {% if ok %}
     <div class="scan-icon {% if record.status == 'late' %}late{% else %}ok{% endif %}" aria-hidden="true">✓</div>
@@ -14,9 +14,6 @@
     {% if state == "done" %}
     <h1 class="h3 fw-bold mb-2">出席を受け付けました</h1>
     <p class="text-muted mb-4">今日も一日がんばりましょう。</p>
-    {% elif state == "late" %}
-    <h1 class="h3 fw-bold mb-2">出席を受け付けました</h1>
-    <p class="text-muted mb-4">{{ times.late }}を過ぎていたため「遅刻」になりました。理由があるときは担任の先生に伝えてください。</p>
     {% elif state == "already" %}
     <h1 class="h3 fw-bold mb-2">すでに受け付けています</h1>
     {% if record.scanned_at %}
@@ -31,13 +28,6 @@
     {% elif state == "invalid" %}
     <h1 class="h3 fw-bold mb-2">無効なQRコードです。</h1>
     <p class="text-muted mb-4">出席用のQRコードではありません。先生の画面に出ているQRコードを読み取ってください。</p>
-    {% elif state == "before" %}
-    <!-- UI にはない画面（QR コードは受付中しか出ないので、ふつうは起きない） -->
-    <h1 class="h3 fw-bold mb-2">出席の受付はまだ始まっていません</h1>
-    <p class="text-muted mb-4">受付は{{ times.open }}からです。時間になったら、もう一度読み取ってください。</p>
-    {% elif state == "closed" %}
-    <h1 class="h3 fw-bold mb-2">出席の受付は終了しました</h1>
-    <p class="text-muted mb-4">受付は{{ times.close }}までです。担任の先生に直接伝えてください。</p>
     {% endif %}
 
     {% if ok %}

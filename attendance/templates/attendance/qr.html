@@ -36,8 +36,8 @@
                 <div class="small text-muted mt-1">あと <b id="qrLeft">30</b> 秒で新しいQRコードに変わります</div>
             </div>
             <ul class="qr-rules text-start small text-muted mt-2 mb-2">
-                <li>{{ times.open }}〜{{ times.late }}：出席　{{ times.late }}〜{{ times.close }}：遅刻</li>
-                <li>{{ times.close }}までに読み取らなかった生徒は「欠席」</li>
+                <li>この画面を開いてから{{ qr_minutes }}分の間に読み取った生徒は「出席」</li>
+                <li>読み取らなかった生徒は「欠席」。あとから来た生徒は、出欠管理の画面で「遅刻」に切り替えます</li>
                 <li>QRコードは30秒ごとに変わります</li>
             </ul>
             <button type="button" class="btn btn-sm btn-outline-board" id="fullBtn">全画面で表示</button>
@@ -49,7 +49,6 @@
         <div class="note-card p-3">
             <div class="qr-counts mb-2">
                 <div class="qr-count st-done"><span>出席</span><b id="cDone">0</b></div>
-                <div class="qr-count st-late"><span>遅刻</span><b id="cLate">0</b></div>
                 <div class="qr-count st-wait"><span>まだ</span><b id="cWait">0</b></div>
                 <div class="qr-count st-absent"><span>欠席</span><b id="cAbsent">0</b></div>
             </div>
@@ -82,9 +81,7 @@
 (function () {
     const SCAN_PATH = "{{ scan_path|escapejs }}";
     const PHASES = {
-        before: { label: "受付前", badge: "badge-closed", note: "{{ times.open }}から受付を始めます" },
-        open:   { label: "受付中", badge: "badge-open",   note: "{{ times.late }}までに読み取ると「出席」になります" },
-        late:   { label: "遅刻の時間", badge: "badge-draft", note: "今から読み取ると「遅刻」になります" },
+        open:   { label: "受付中", badge: "badge-open",   note: "読み取ると「出席」になります" },
         closed: { label: "受付終了", badge: "badge-closed", note: "読み取らなかった生徒は「欠席」になりました" },
     };
     const box = document.getElementById("qrBox");
@@ -153,7 +150,6 @@
         });
         const count = cls => document.querySelectorAll("#qrList li." + cls).length;
         document.getElementById("cDone").textContent = count("done");
-        document.getElementById("cLate").textContent = count("late");
         document.getElementById("cWait").textContent = count("wait");
         document.getElementById("cAbsent").textContent = count("absent");
     }
@@ -172,19 +168,19 @@
             applyItems(data.items);
             return;
         }
-        // data.type === "phase"
-        setPhase(data.phase);
-        if (data.phase === "closed") {
+        if (data.type === "closed") {
+            // 画面を開いてから決まった分数がたった（このあと出欠管理の画面に戻る）
+            setPhase("closed");
             showMessage("受付を終了しました");
             render();   // まだの生徒を欠席にする
-        } else if (data.phase === "before") {
-            showMessage("受付は{{ times.open }}からです");
-        } else {
-            drawQr(data.token);
-            left = total = data.seconds;
-            document.getElementById("qrLeft").textContent = left;
-            document.getElementById("qrBar").style.width = "100%";
+            return;
         }
+        // data.type === "token"：30秒ごとの新しい QR コード
+        setPhase("open");
+        drawQr(data.token);
+        left = total = data.seconds;
+        document.getElementById("qrLeft").textContent = left;
+        document.getElementById("qrBar").style.width = "100%";
     });
     socket.addEventListener("close", () => {
         // 受付終了のあとはサーバーが送るものがないので、そのままにする
@@ -196,6 +192,12 @@
     tickClock();
     setInterval(tickClock, 1000);
     setInterval(tickQr, 1000);
+
+    // 画面を開いてから決まった分数（settings の ATTENDANCE_QR_MINUTES）がたったら、
+    // 「受付を終了して出欠に反映」を押したときと同じように、出欠管理の画面に戻る
+    setTimeout(() => {
+        location.href = "{% url 'attendance:today' %}?qr=1";
+    }, {{ qr_minutes }} * 60 * 1000);
 
     // 全画面表示（教室のテレビに映すとき）
     document.getElementById("fullBtn").addEventListener("click", () => {
