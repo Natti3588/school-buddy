@@ -1,0 +1,33 @@
+{% extends "system_admin/base.html" %}
+{% block title %}学校登録完了 - {{ system_name }}{% endblock %}
+
+{% block content %}
+
+<h1 class="h3 fw-bold mb-3">学校登録</h1>
+{% include "students/_steps.html" with step=3 %}
+
+<div class="note-card form-card p-4 p-md-5 text-center">
+    <div class="display-4 mb-2" style="color: var(--board);" aria-hidden="true">✓</div>
+    <h2 class="h4 fw-bold mb-3">{{ school.name }}を登録しました</h2>
+
+    <table class="table table-sm text-start mx-auto mb-4" style="max-width: 460px;">
+        <tbody>
+            <tr><th class="text-muted fw-normal">学校管理者コード</th><td class="fw-bold"><code class="init-pw">{{ admin.user_id }}</code></td></tr>
+            <tr><th class="text-muted fw-normal">学校管理者</th><td>{{ admin.name }}</td></tr>
+            <tr><th class="text-muted fw-normal text-nowrap">学校管理者メールアドレス</th><td>{{ admin.email }}</td></tr>
+            <!-- 初期パスワードの行は UI に無い（UI 担当の画面が届くまでの仮）。教員登録の完了画面と同じ形にした -->
+            <tr><th class="text-muted fw-normal">初期パスワード</th>
+                <td>{% if initial_password %}<code class="init-pw">{{ initial_password }}</code>{% else %}<span class="text-muted">表示できません</span>{% endif %}</td></tr>
+        </tbody>
+    </table>
+    <p class="small text-muted mb-3">学校管理者コードと初期パスワードを、学校管理者に伝えてください。<br>
+        初期パスワードは、この画面を閉じると表示できません。</p>
+
+    <div class="d-flex flex-wrap justify-content-center gap-2">
+        <!-- 学校一覧はまだ無いので、管理者ホームに戻る -->
+        <a href="{% url 'system_admin_top' %}" class="btn btn-outline-board px-4">管理者ホームへ</a>
+        <a href="{% url 'schools:new' %}" class="btn btn-board px-4">続けて登録する</a>
+    </div>
+</div>
+
+{% endblock %}

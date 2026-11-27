@@ -1,0 +1,105 @@
+{% extends "system_admin/base.html" %}
+{% block title %}学校登録 - {{ system_name }}{% endblock %}
+
+{% block content %}
+
+<h1 class="h3 fw-bold mb-1">学校登録</h1>
+<p class="text-muted mb-3">放課GOを利用する学校を登録します。学校コードは登録時に発行されます。</p>
+
+{% include "students/_steps.html" %}
+
+<div class="note-card form-card p-4">
+
+    {% if form.errors %}
+    <div class="alert alert-danger">
+        <div class="fw-bold mb-1">入力内容を確認してください</div>
+        <ul class="mb-0 small">
+            {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+            {% for field in form %}{% for error in field.errors %}<li>{{ error }}</li>{% endfor %}{% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <form method="post" action="{% url 'schools:new' %}" novalidate>
+        {% csrf_token %}
+        <div class="row g-3">
+
+            <div class="col-md-8">
+                <label class="form-label fw-bold" for="{{ form.name.id_for_label }}">学校名<span class="req">必須</span></label>
+                <input type="text" maxlength="100" name="{{ form.name.html_name }}" id="{{ form.name.id_for_label }}"
+                       class="form-control {% if form.name.errors %}is-invalid{% endif %}"
+                       placeholder="例：さいたま市立 ○○中学校" value="{{ form.name.value|default_if_none:'' }}">
+                {% for error in form.name.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label fw-bold" for="{{ form.school_type.id_for_label }}">学校種別<span class="req">必須</span></label>
+                <!-- 最初は何も選ばれていない状態にする -->
+                <select name="{{ form.school_type.html_name }}" id="{{ form.school_type.id_for_label }}"
+                        class="form-select {% if form.school_type.errors %}is-invalid{% endif %}">
+                    {% for value, label in form.school_type.field.choices %}
+                    <option value="{{ value }}" {% if form.school_type.value|default_if_none:'' == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+                {% for error in form.school_type.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+            </div>
+
+            <div class="col-12">
+                <label class="form-label fw-bold" for="{{ form.address.id_for_label }}">所在地<span class="req">必須</span></label>
+                <input type="text" maxlength="200" name="{{ form.address.html_name }}" id="{{ form.address.id_for_label }}"
+                       class="form-control {% if form.address.errors %}is-invalid{% endif %}"
+                       placeholder="例：埼玉県さいたま市南区別所1-2-3" value="{{ form.address.value|default_if_none:'' }}">
+                {% for error in form.address.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label fw-bold" for="{{ form.admin_name.id_for_label }}">学校管理者<span class="req">必須</span></label>
+                <input type="text" maxlength="100" name="{{ form.admin_name.html_name }}" id="{{ form.admin_name.id_for_label }}"
+                       class="form-control {% if form.admin_name.errors %}is-invalid{% endif %}"
+                       placeholder="例：山田 太郎" value="{{ form.admin_name.value|default_if_none:'' }}">
+                {% for error in form.admin_name.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label fw-bold" for="{{ form.admin_email.id_for_label }}">学校管理者メールアドレス<span class="req">必須</span></label>
+                <input type="email" name="{{ form.admin_email.html_name }}" id="{{ form.admin_email.id_for_label }}"
+                       class="form-control {% if form.admin_email.errors %}is-invalid{% endif %}"
+                       placeholder="例：info@example-school.ed.jp" value="{{ form.admin_email.value|default_if_none:'' }}">
+                {% for error in form.admin_email.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+            </div>
+
+            <!-- 初期パスワードは UI に無い欄（UI 担当の画面が届くまでの仮）。教員登録の欄と同じ形にした -->
+            <div class="col-md-6">
+                <label class="form-label fw-bold" for="initPw">初期パスワード<span class="req">必須</span></label>
+                <div class="input-group has-validation">
+                    <input type="password" name="{{ form.password.html_name }}" id="initPw"
+                           class="form-control {% if form.password.errors %}is-invalid{% endif %}"
+                           autocomplete="new-password" value="{{ form.password.value|default_if_none:'' }}">
+                    <button type="button" class="btn btn-outline-secondary" id="pwToggle">表示</button>
+                    {% for error in form.password.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="form-text">8文字以上・英字と数字を両方入れる。完了画面に表示されるので、学校管理者に伝えてください。</div>
+            </div>
+
+        </div>
+
+        <hr class="my-4">
+
+        <div class="d-flex flex-wrap justify-content-end gap-2">
+            <a href="{% url 'system_admin_top' %}" class="btn btn-outline-secondary px-4">キャンセル</a>
+            <button type="submit" class="btn btn-board px-4">確認する ›</button>
+        </div>
+    </form>
+</div>
+
+<script>
+// 初期パスワードの表示／非表示
+document.getElementById("pwToggle").addEventListener("click", function () {
+    const pw = document.getElementById("initPw");
+    const show = pw.type === "password";
+    pw.type = show ? "text" : "password";
+    this.textContent = show ? "隠す" : "表示";
+});
+</script>
+
+{% endblock %}

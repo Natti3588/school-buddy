@@ -1,6 +1,12 @@
+from django import forms
 from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm, SetPasswordForm
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+
+from students.models import issue_login_id
+
+from .models import Role, User
+from .registration import clean_initial_password
 
 
 class LoginForm(AuthenticationForm):
@@ -73,3 +79,44 @@ class StudentPasswordChangeForm(NewPasswordMixin, PasswordChangeForm):
             **self.error_messages,
             "password_incorrect": "今のパスワードが正しくありません",
         }
+
+
+class TeacherForm(forms.Form):
+    """教員登録（ログイン中の学校管理者の学校に、教員を1人作る）"""
+
+    name = forms.CharField(label="氏名", max_length=100)
+    furigana = forms.CharField(label="ふりがな", max_length=100)
+    # 完了画面で表示するので、確認画面から「修正する」で戻ったときも入っているようにする
+    password = forms.CharField(label="初期パスワード", widget=forms.PasswordInput(render_value=True))
+
+    def __init__(self, *args, school, require_password=True, **kwargs):
+        super().__init__(*args, **kwargs)
+        # 学校は入力させず、ログイン中の学校管理者の学校にする
+        self.school = school
+        if not require_password:
+            # 確認画面と保存の直前は、パスワード以外をもう一度確かめる（パスワードは入力画面で確かめ済み）
+            del self.fields["password"]
+        # 空欄のときのメッセージを、ユースケースの代替フローの「〇〇を入力してください」にそろえる
+        for field in self.fields.values():
+            field.error_messages["required"] = f"{field.label}を入力してください"
+        if "password" in self.fields:
+            # ユースケース 7-3 の文（ラベルの「初期パスワード」とは違う）
+            self.fields["password"].error_messages["required"] = "パスワードを入力してください"
+
+    def clean_password(self):
+        return clean_initial_password(self.cleaned_data["password"])
+
+    def save(self, password_hash):
+        data = self.cleaned_data
+        # create_user() はパスワードをハッシュにするので使わない（ここではもうハッシュになっている）
+        user = User(
+            user_id=issue_login_id(),
+            name=data["name"],
+            furigana=data["furigana"],
+            role=Role.TEACHER,
+            school=self.school,
+            password=password_hash,
+            must_change_password=False,
+        )
+        user.save()
+        return user

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}教員の登録完了 - {{ system_name }}{% endblock %}
+
+{% block content %}
+
+<a href="{% url 'teachers:list' %}" class="small link-board">‹ 教員アカウント管理</a>
+<h1 class="h3 fw-bold mt-1 mb-3">教員を追加</h1>
+{% include "students/_steps.html" with step=3 %}
+
+<div class="note-card form-card p-4 p-md-5 text-center">
+    <div class="display-4 mb-2" style="color: var(--board);" aria-hidden="true">✓</div>
+    <h2 class="h4 fw-bold mb-3">{{ t.name }} 先生を登録しました</h2>
+
+    <table class="table table-sm text-start mx-auto mb-4" style="max-width: 360px;">
+        <tbody>
+            <tr><th class="text-muted fw-normal">氏名</th><td>{{ t.name }}（{{ t.furigana }}）</td></tr>
+            <tr><th class="text-muted fw-normal">ログインID</th><td><code class="init-pw">{{ t.user_id }}</code></td></tr>
+            <tr><th class="text-muted fw-normal">初期パスワード</th>
+                <td>{% if initial_password %}<code class="init-pw">{{ initial_password }}</code>{% else %}<span class="text-muted">表示できません</span>{% endif %}</td></tr>
+        </tbody>
+    </table>
+    <p class="small text-muted mb-3">ログインIDと初期パスワードを、{{ t.name }} 先生に伝えてください。<br>
+        初期パスワードは、この画面を閉じると表示できません。</p>
+
+    <div class="d-flex flex-wrap justify-content-center gap-2">
+        <a href="{% url 'teachers:list' %}" class="btn btn-outline-board px-4">教員一覧へ</a>
+        <a href="{% url 'teachers:new' %}" class="btn btn-board px-4">続けて登録する</a>
+    </div>
+</div>
+
+{% endblock %}

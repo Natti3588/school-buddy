@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}教員アカウント管理 - {{ system_name }}{% endblock %}
+
+{% block content %}
+
+<div class="d-flex flex-wrap justify-content-between align-items-end mb-4 gap-2">
+    <div>
+        <h1 class="h3 fw-bold mb-1">教員アカウント管理</h1>
+        <p class="text-muted mb-0">{{ school.name }}の教員：{{ rows|length }}人</p>
+    </div>
+    <a href="{% url 'teachers:new' %}" class="btn btn-board">＋ 教員を追加</a>
+</div>
+
+<div class="note-card">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead class="table-light">
+                <tr><th class="ps-3">氏名</th><th>担任クラス</th><th>権限</th><th>ログインID</th><th class="pe-3"></th></tr>
+            </thead>
+            <tbody>
+                {% for t, homeroom in rows %}
+                <tr>
+                    <td class="ps-3 fw-bold">{{ t.name }}</td>
+                    <td>{{ homeroom|default:"—" }}</td>
+                    <td>
+                        {% if t.role == "school_admin" %}<span class="badge badge-draft">学校管理者</span>
+                        {% else %}<span class="badge text-bg-light border">教員</span>{% endif %}
+                    </td>
+                    <td><code class="text-body">{{ t.user_id }}</code></td>
+                    <td class="pe-3 text-end">
+                        <!-- 編集は今後追加 -->
+                        <span class="btn btn-sm btn-outline-secondary disabled">編集</span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

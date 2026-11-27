@@ -44,10 +44,11 @@
                 <a href="{% url 'system_admin_top' %}" class="side-link {% if ep == 'system_admin_top' %}active{% endif %}">
                     <span class="dot c-home"></span>管理者ホーム
                 </a>
-                <!-- TODO: 学校登録・学校一覧の画面を作ったら href と active の条件を差し替える -->
-                <a href="#" class="side-link">
+                <!-- 学校登録（確認・完了の画面でも選んだ表示にする） -->
+                <a href="{% url 'schools:new' %}" class="side-link {% if request.resolver_match.app_name == 'schools' %}active{% endif %}">
                     <span class="dot c-class"></span>学校登録
                 </a>
+                <!-- TODO: 学校一覧の画面を作ったら href と active の条件を差し替える -->
                 <a href="#" class="side-link">
                     <span class="dot c-teacher"></span>学校一覧
                 </a>
